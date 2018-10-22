@@ -15,16 +15,18 @@ def get_args() :
                         help='path to crn file')
     parser.add_argument('--c12_const', type=float, default=120,
                         help='constant value of c12')
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[-1,6],
+                        help='input range x**range for c6')
     parser.add_argument('--N', type=int, default=250,
                         help='number of grid points per dimension to use')
 
     return vars(parser.parse_args())
 
 
-def main(crn_path,N=250,c12_const=120) :
+def main(crn_path,N=250,c12_const=120,c6_range=[-1,6]) :
     '''parametrisation of main program'''
 
-    c6 = logspace(-1,6,N)
+    c6 = logspace(*tuple(c6_range),num=N)
     c12 = c12_const*ones(N)
     model = fromcrn(crn_path)
 

@@ -15,8 +15,14 @@ def get_args() :
                         help='path to crn file')
     parser.add_argument('--N', type=int, default=50,
                         help='number of grid points per dimension to use')
-
-    # ,c_range=[-1,1],cdash_range=[0.5,1],clip=-0.5,eps=1e-3
+    parser.add_argument('--c_range', nargs=2, type=float, default=[-1,1],
+                        help='input range of non-dimensionalised c6')
+    parser.add_argument('--cdash_range', nargs=2, type=float, default=[0.5,1],
+                        help='input range of non-dimensionalised c12')
+    parser.add_argument('--clip', type=float,default=-0.5,
+                        help='threshold concentration x**clip below which system is off')
+    parser.add_argument('--eps', type=float,default=1e-3,
+                        help='precision to use when computing roots')
     return vars(parser.parse_args())
 
 
