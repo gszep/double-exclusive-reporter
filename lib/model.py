@@ -1,4 +1,6 @@
-from numpy import array,log,exp,ones,zeros,mean,inf
+from numpy import array,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full
+from numpy.linalg import norm
+from scipy.ndimage import laplace
 from roots import roots_parallel
 
 from re import search
@@ -13,29 +15,70 @@ class DoubleExclusive(object) :
                  aL=0.001170,a1R=1.86e3,KGR_76=0.00145301678863517,dL=0.000117,
                  aT=0.000951,a1S=704,KGS_81=1.00086836995962000e-5,dT=0.666,
                  aR33=9.1,dR=0.267,aS175=3.58,dS=0.319,
-                 KR6=3.50695213045775e-8,nR=0.699,
-                 KS12=0.0095893786931253,nS=1.25,
-                 growth=1,capacity=67.5) :
+                 KR6=3.50695213045775e-8,nR=0.699,nL=1.0,
+                 KS12=0.0095893786931253,nS=1.25,nT=4.0,
+                 growth=1,capacity=67.5,
+                 c6=0.0000018,c12=0.0000009,
+                 nx=101,xmax=0.1,dt=0.01) :
 
         ###### converting to dimensionless parameters ######
 
         # inihibitions
         self.alpha = array([(capacity*aR33)/(dR + growth),(capacity*aS175)/(dS+ growth)]) **2
+        self.nu = array([dR,dS]) + growth
 
         # activations
         self.beta = capacity * array([(aL*a1R*KGR_76)/(dL + growth),(aT*a1S*KGS_81)/(dT + growth)])
+        self.mu = array([dL,dT]) + growth
 
-        # baseline inhibitor production
+        # baseline inhibitor production and  saturation
         self.omega = array([a0_76/(a1R*KGR_76),a0_81/(a1S*KGS_81)])
-
-        # inhibitor saturation
         self.Omega = array([KGR_76,KGS_81])
 
         # signalling hill functions
         self.n = array([nR,nS])
+        self.exponents = array([nT,nL])
 
         # signalling dissociation constants
         self.k = array([1.0/KR6,1.0/KS12])
+
+        # diffusion coefficients
+        self.D = array([c6,c12])
+
+        # one dimensional lattice of states
+        self.epsilon = 1e-5
+        self.state = { 'diffusables':full((nx,2),self.epsilon),
+                       'activators':full((nx,2),self.epsilon),
+                       'inhibitors':full((nx,2),self.epsilon) }
+
+        self.xmax = xmax
+        self.nx = nx
+        self.space = linspace(0,xmax,nx)
+        self.time = array([0.0])
+
+        self.dx = self.space[1]-self.space[0]
+        self.dt = dt
+        self.tolerance = 0.01
+
+    def laplacian(self,states):
+        return array([ laplace(state,mode='nearest')/self.dx**2 for state in states.T ]).T
+
+    def time_step(self) :
+
+        self.time = append(self.time,self.time[-1]+self.dt)
+        self.c = ( self.state['diffusables']/(self.k+self.state['diffusables']) )**self.n
+
+        self.state['inhibitors'] += self.mu*(
+            self.beta*(self.c*self.state['activators']**2+self.omega)\
+                     /(self.c*self.state['activators']**2*self.Omega+1)\
+                            - self.state['inhibitors']) * self.dt
+
+        self.state['activators'] += self.nu*(
+            sqrt(self.alpha)/(1+self.state['inhibitors'][:,::-1]**self.exponents)\
+                              - self.state['activators'] ) * self.dt
+
+        self.state['diffusables'] += self.D*self.laplacian(self.state['diffusables']) * self.dt
+        return True
 
     def get_diffusives(self,c) :
         '''return the concentrations of c6 and c12 in nM for given
@@ -165,7 +208,7 @@ def fromcrn(file_path) :
                     # parse argument names and values
                     name,value = match.group().split('=')
                     name = name.strip()
-                    parameters[name] = float(value)
+                    parameters[name] = float(value) if '.' in value else int(value)
 
                 else :
                     raise Exception('parameter "{}" not found in crn file'.format(arg))
