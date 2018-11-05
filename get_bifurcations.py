@@ -9,8 +9,8 @@ from matplotlib.pyplot import *
 
 def get_args() :
     '''parse arguments from command line'''
-
     parser = ArgumentParser(description='creates bifrucation plot from crn file parameters')
+
     parser.add_argument('--crn_path', type=str,
                         help='path to crn file')
     parser.add_argument('--N', type=int, default=50,
