@@ -26,8 +26,8 @@ def get_args() :
     return vars(parser.parse_args())
 
 
-def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,eps=1e-3) :
-    '''parametrisation of main program'''
+def calculate(crn_path,N,c6_range,c12_range,clip,eps):
+    '''main program calculations'''
 
     # initialisation of model
     diffusives_range = array([c6_range,c12_range]).T
@@ -44,11 +44,17 @@ def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,ep
     L,T = model.get_steady_state(c_grid,clip=clip)
     c6,c12 = model.get_diffusives(c_grid).reshape(2,N,N)
 
-    # create bifrucation figure
+    return c6,c12,L,T
+
+
+def generate_figure(c6,c12,L,T):
+    '''main program figure display'''
+
     figure(figsize=(10,10))
 
     contour(c6,c12,T[:,:,-1]-L[:,:,0],levels=[0],colors=['k'])
     contour(c6,c12,L[:,:,-1]-T[:,:,0],levels=[0],colors=['k'])
+
     contourf(c6,c12,L[:,:,0],cmap='cyan',alpha=0.25)
     contourf(c6,c12,L[:,:,-1],cmap='cyan',alpha=0.25)
     contourf(c6,c12,T[:,:,0],cmap='yellow',alpha=0.25)
@@ -65,6 +71,13 @@ def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,ep
     text(1e-5, 100,r'$Monostable$ Region',fontsize=16)
     text(1e3, 10,r'$Monostable$ Region',fontsize=16)
     show()
+
+
+def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,eps=1e-3) :
+    '''parametrisation of main program'''
+
+    c6,c12,L,T = calculate(crn_path,N,c6_range,c12_range,clip,eps)
+    generate_figure(c6,c12,L,T)
 
 
 # execute main program
