@@ -15,28 +15,28 @@ def get_args() :
                         help='path to crn file')
     parser.add_argument('--N', type=int, default=50,
                         help='number of grid points per dimension to use')
-    parser.add_argument('--c_range', nargs=2, type=float, default=[-1,1],
-                        help='input range of non-dimensionalised c6')
-    parser.add_argument('--cdash_range', nargs=2, type=float, default=[0.5,1],
-                        help='input range of non-dimensionalised c12')
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-6,1e8],
+                        help='input range for c6 in nM')
+    parser.add_argument('--c12_range', nargs=2, type=float, default=[10**-0.5,1e5],
+                        help='input range for c12 in nM')
     parser.add_argument('--clip', type=float,default=-0.5,
-                        help='threshold concentration x**clip below which system is off')
+                        help='threshold concentration 10**clip below which system is off')
     parser.add_argument('--eps', type=float,default=1e-3,
                         help='precision to use when computing roots')
     return vars(parser.parse_args())
 
 
-def main(crn_path,N=50,c_range=[-1,1],cdash_range=[0.5,1],clip=-0.5,eps=1e-3) :
+def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,eps=1e-3) :
     '''parametrisation of main program'''
 
-    eps = array([eps,-eps])
-    c_range = tuple(array(c_range)+eps)
-    cdash_range = tuple(array(cdash_range)+eps)
-
     # initialisation of model
+    diffusives_range = array([c6_range,c12_range]).T
     model = fromcrn(crn_path)
+
+    c_range,cdash_range = model.get_inputs(diffusives_range)
     c = linspace(*c_range,num=N)
     cdash = linspace(*cdash_range,num=N)
+
     x,y = meshgrid(c,cdash,copy=False)
     c_grid = dstack([x,y])
 
@@ -60,7 +60,7 @@ def main(crn_path,N=50,c_range=[-1,1],cdash_range=[0.5,1],clip=-0.5,eps=1e-3) :
     yscale('log')
 
     # labelling regions
-    text(1e-5, 4,r'$Off$ State',fontsize=16)
+    text(1e-4, 1.5,r'$Off$ State',fontsize=16)
     text(120, 3000,r'$Bistable$ Region',fontsize=16)
     text(1e-5, 100,r'$Monostable$ Region',fontsize=16)
     text(1e3, 10,r'$Monostable$ Region',fontsize=16)
