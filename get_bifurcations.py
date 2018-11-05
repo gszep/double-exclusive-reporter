@@ -26,8 +26,26 @@ def get_args() :
     return vars(parser.parse_args())
 
 
-def calculate(crn_path,N,c6_range,c12_range,clip,eps):
-    '''main program calculations'''
+def get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps):
+    '''Calculate bifrucation diagram for double exclusive reporter
+    for a given range of diffusives c6 and c12.
+
+    ---parameters---
+    crn_path : <str>
+        path to crn file
+    N : <int>
+        number of grid points per dimension to use
+
+    c6_range : [<float>,<float>]
+        input range for c6 in nM
+    c12_range : [<float>,<float>]
+        input range for c12 in nM
+
+    clip : <float>
+        threshold concentration 10**clip below which system is off
+    eps : <float>
+        precision to use when computing roots
+    '''
 
     # initialisation of model
     diffusives_range = array([c6_range,c12_range]).T
@@ -76,12 +94,11 @@ def generate_figure(c6,c12,L,T):
 def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,eps=1e-3) :
     '''parametrisation of main program'''
 
-    c6,c12,L,T = calculate(crn_path,N,c6_range,c12_range,clip,eps)
+    c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
     generate_figure(c6,c12,L,T)
 
 
 # execute main program
 if __name__ == '__main__' :
-
     args = get_args()
     main(**args)
