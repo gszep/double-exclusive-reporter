@@ -1,7 +1,7 @@
 from numpy import array,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full
 from numpy.linalg import norm
 from scipy.ndimage import laplace
-from roots import roots_parallel
+from .roots import roots_parallel
 
 from re import search
 from inspect import getargspec
