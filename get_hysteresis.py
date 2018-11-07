@@ -11,13 +11,13 @@ def get_args() :
     '''parse arguments from command line'''
     parser = ArgumentParser(description='creates hysteresis plot from crn file parameters')
 
-    parser.add_argument('--crn_path', type=str,
+    parser.add_argument('crn_path', type=str,
                         help='path to crn file')
     parser.add_argument('--c12_const', type=float, default=120,
-                        help='constant value of c12 in nM')
+                        help='constant value of c12 in nM',metavar='value')
     parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-1,1e6],
-                        help='input range for c6 in nM')
-    parser.add_argument('--N', type=int, default=250,
+                        help='input range for c6 in nM', metavar=('min','max'))
+    parser.add_argument('--N', type=int, default=250 ,metavar='gridpoints',
                         help='number of grid points per dimension to use')
 
     return vars(parser.parse_args())
@@ -66,15 +66,17 @@ def generate_figure(c6,c12,L,T,c12_const):
     show()
 
 
-def main(crn_path,N=250,c12_const=120,c6_range=[1e-1,1e6]) :
+def main(crn_path,N,c12_const,c6_range) :
     '''parametrisation of main program'''
 
+    print 'Calculating steady states...',
     c6,c12,L,T = get_hysteresis(crn_path,N,c6_range,c12_const)
+    print 'Done'
+
     generate_figure(c6,c12,L,T,c12_const)
 
 
 # execute main program
 if __name__ == '__main__' :
-
     args = get_args()
     main(**args)

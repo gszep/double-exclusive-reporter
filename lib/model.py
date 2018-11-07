@@ -19,7 +19,7 @@ class DoubleExclusive(object) :
                  KS12=0.0095893786931253,nS=1.25,nT=4.0,
                  growth=1,capacity=67.5,
                  c6=0.0000018,c12=0.0000009,
-                 nx=101,xmax=0.1,dt=0.01) :
+                 nx=101,xmax=0.1,final=25.0,dt=0.01) :
 
         ###### converting to dimensionless parameters ######
 
@@ -51,14 +51,14 @@ class DoubleExclusive(object) :
                        'activators':full((nx,2),self.epsilon),
                        'inhibitors':full((nx,2),self.epsilon) }
 
-        self.xmax = xmax
-        self.nx = nx
         self.space = linspace(0,xmax,nx)
-        self.time = array([0.0])
-
+        self.xmax = xmax
         self.dx = self.space[1]-self.space[0]
+        self.nx = nx
+
+        self.time = array([0.0])
+        self.final = final
         self.dt = dt
-        self.tolerance = 0.01
 
     def laplacian(self,states):
         return array([ laplace(state,mode='nearest')/self.dx**2 for state in states.T ]).T

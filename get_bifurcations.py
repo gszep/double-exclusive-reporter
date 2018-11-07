@@ -11,17 +11,17 @@ def get_args() :
     '''parse arguments from command line'''
     parser = ArgumentParser(description='creates bifrucation plot from crn file parameters')
 
-    parser.add_argument('--crn_path', type=str,
+    parser.add_argument('crn_path', type=str,
                         help='path to crn file')
-    parser.add_argument('--N', type=int, default=50,
+    parser.add_argument('--N', type=int, default=50, metavar='gridpoints',
                         help='number of grid points per dimension to use')
     parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-6,1e8],
-                        help='input range for c6 in nM')
+                        help='input range for c6 in nM',metavar=('min','max'))
     parser.add_argument('--c12_range', nargs=2, type=float, default=[10**-0.5,1e5],
-                        help='input range for c12 in nM')
-    parser.add_argument('--clip', type=float,default=-0.5,
+                        help='input range for c12 in nM',metavar=('min','max'))
+    parser.add_argument('--clip', type=float,default=-0.5,metavar='value',
                         help='threshold concentration 10**clip below which system is off')
-    parser.add_argument('--eps', type=float,default=1e-3,
+    parser.add_argument('--eps', type=float,default=1e-3,metavar='value',
                         help='precision to use when computing roots')
     return vars(parser.parse_args())
 
@@ -94,7 +94,10 @@ def generate_figure(c6,c12,L,T):
 def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,eps=1e-3) :
     '''parametrisation of main program'''
 
+    print 'Calculating steady states...',
     c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
+    print 'Done'
+
     generate_figure(c6,c12,L,T)
 
 
