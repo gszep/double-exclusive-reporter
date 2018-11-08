@@ -1,67 +1,73 @@
 from numpy import array,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full
 from numpy.linalg import norm
 from scipy.ndimage import laplace
+
 from .roots import roots_parallel
+from re import sub,search,finditer
+from yaml import load
 
-from re import search
-from inspect import getargspec
 
-class DoubleExclusive(object) :
-    '''Contains all we need to calculate steady states of the
-    double exclusive reporter system; assumptions are currently
-    that there is no cross-talk between reporters.'''
+class Model(object) :
+    '''Contains all we need to calculate steady states and simulate
+    a chemical reaction system parsed from a crn file.'''
 
-    def __init__(self,a0_76=1.92,a0_81=0.822,
-                 aL=0.001170,a1R=1.86e3,KGR_76=0.00145301678863517,dL=0.000117,
-                 aT=0.000951,a1S=704,KGS_81=1.00086836995962000e-5,dT=0.666,
-                 aR33=9.1,dR=0.267,aS175=3.58,dS=0.319,
-                 KR6=3.50695213045775e-8,nR=0.699,nL=1.0,
-                 KS12=0.0095893786931253,nS=1.25,nT=4.0,
-                 growth=1,capacity=67.5,
-                 c6=0.0000018,c12=0.0000009,
-                 nx=101,xmax=0.1,final=25.0,dt=0.01) :
+    def __init__(self,**kwargs) :
+
+        # parse all set parameters to attributes
+        for key in kwargs :
+            setattr(self, key, kwargs[key])
+
+        # parse out parameters and rates
+        for param in self.parameters :
+            setattr(self, param, self.parameters[param])
+
+        # substitute in parameter values
+        for rate in self.rates :
+            if self.rates[rate] in self.parameters :
+                setattr(self, rate, self.parameters[self.rates[rate]])
+            else :
+                setattr(self, rate, self.rates[rate])
+
+        # convert boundary condition keyword
+        if self.spatial['boundary'] == 'ZeroFlux' : self.boundary = 'nearest'
+        if self.spatial['boundary'] == 'Periodic' : self.boundary = 'wrap'
 
         ###### converting to dimensionless parameters ######
 
         # inihibitions
-        self.alpha = array([(capacity*aR33)/(dR + growth),(capacity*aS175)/(dS+ growth)]) **2
-        self.nu = array([dR,dS]) + growth
+        self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
+        self.nu = array([self.dR,self.dS]) + self.growth
 
         # activations
-        self.beta = capacity * array([(aL*a1R*KGR_76)/(dL + growth),(aT*a1S*KGS_81)/(dT + growth)])
-        self.mu = array([dL,dT]) + growth
+        self.beta = self.capacity * array([(self.aL*self.a1R*self.KGR_76)/(self.dL + self.growth),(self.aT*self.a1S*self.KGS_81)/(self.dT + self.growth)])
+        self.mu = array([self.dL,self.dT]) + self.growth
 
         # baseline inhibitor production and  saturation
-        self.omega = array([a0_76/(a1R*KGR_76),a0_81/(a1S*KGS_81)])
-        self.Omega = array([KGR_76,KGS_81])
+        self.omega = array([self.a0_76/(self.a1R*self.KGR_76),self.a0_81/(self.a1S*self.KGS_81)])
+        self.Omega = array([self.KGR_76,self.KGS_81])
 
         # signalling hill functions
-        self.n = array([nR,nS])
-        self.exponents = array([nT,nL])
+        self.n = array([self.nR,self.nS])
+        self.exponents = array([self.nT,self.nL])
 
         # signalling dissociation constants
-        self.k = array([1.0/KR6,1.0/KS12])
+        self.k = array([1.0/self.KR6,1.0/self.KS12])
 
         # diffusion coefficients
-        self.D = array([c6,c12])
+        self.D = array([self.c6,self.c12])
 
         # one dimensional lattice of states
         self.epsilon = 1e-5
-        self.state = { 'diffusables':full((nx,2),self.epsilon),
-                       'activators':full((nx,2),self.epsilon),
-                       'inhibitors':full((nx,2),self.epsilon) }
+        self.state = { 'diffusables':full((self.nx,2),self.epsilon),
+                       'activators':full((self.nx,2),self.epsilon),
+                       'inhibitors':full((self.nx,2),self.epsilon) }
 
-        self.space = linspace(0,xmax,nx)
-        self.xmax = xmax
-        self.dx = self.space[1]-self.space[0]
-        self.nx = nx
-
+        self.space = linspace(0,self.xmax,self.nx)
         self.time = array([0.0])
-        self.final = final
-        self.dt = dt
+        self.dx = self.space[1]-self.space[0]
 
     def laplacian(self,states):
-        return array([ laplace(state,mode='nearest')/self.dx**2 for state in states.T ]).T
+        return array([ laplace(state,mode=self.boundary)/self.dx**2 for state in states.T ]).T
 
     def time_step(self) :
 
@@ -109,6 +115,7 @@ class DoubleExclusive(object) :
             contains the values of f(x,c) for LacI and TetR
             in array of the same shape as x and c
         '''
+
 
         # transform to logspace
         C = self.alpha**c
@@ -180,37 +187,75 @@ class DoubleExclusive(object) :
 
 
 def fromcrn(file_path) :
-    '''Creates DoubleExclusive model object from parameters in a given crn file
+    '''Creates model object from parameters in a given crn file
 
     --- parameters ---
     file_path : <str>
         path to crn file to read parameters from
 
     --- returns ---
-    model : <DoubleExclusive>
+    model : <Model>
         model object initialised with parameters
     '''
 
     # open and read file as string
-    parameters = {}
+    kwargs = { }
     with open(file_path, 'r') as file:
-        file_string=file.read().replace('\n', ' ')
 
-        # iterate through model object constructor arguments
-        for arg in getargspec(DoubleExclusive.__init__)[0] :
-            if arg is not 'self' :
+        # import as string without comments
+        file_string = sub(r'(//).*',' ',file.read())
 
-                # use regex to match arguments in file string
-                pattern = r'[ ]*=[ ]*[0-9.eE+-]+'
-                match = search(arg+pattern,file_string)
-                if match is not None :
+        # convert to yaml compatible syntax
+        file_string = file_string.replace(']','}')
+        file_string = file_string.replace('[','{')
+        file_string = file_string.replace(';',',')
+        file_string = file_string.replace('=',':')
 
-                    # parse argument names and values
-                    name,value = match.group().split('=')
-                    name = name.strip()
-                    parameters[name] = float(value) if '.' in value else int(value)
+        # find assigned parameters
+        pattern = r'([0-9|\w]+)[ ]*:[ ]*[\w0-9.eE+-]+'
+        for match in finditer(pattern,file_string) :
 
-                else :
-                    raise Exception('parameter "{}" not found in crn file'.format(arg))
+                item = match.group()
+                name,value = item.split(':')
 
-    return DoubleExclusive(**parameters)
+                # format as yaml
+                value = value.strip() if isfloat(value) else '"'+value.strip()+'"'
+                json_format = '"'+name.strip()+'":'+value
+                file_string = file_string.replace(item,json_format)
+
+        # parse each directive to dictionary
+        pattern = r'(?<=directive ).*?(?=(directive|init))'
+        for match in finditer(pattern,file_string.replace('\n',' ')) :
+            item = match.group()
+
+            # attempt to parse automagically
+            if 'simulator' not in item :
+                key,value = item.split(" ",1)
+                try : kwargs[key] = load(value)
+
+                # otherwise parse manually
+                except :
+
+                    kwargs[key] = {}
+                    for s in value[1:-1].split(',') :
+                        name,value = s.strip().split(':')
+
+                        # convert to python compatible syntax
+                        value = value.replace('^','**')
+
+                        value = value.replace('"','').replace('{','').replace('}','')
+                        name = name.replace('"','').replace('{','').replace('}','')
+
+                        value = float(value) if isfloat(value) else value.strip()
+                        kwargs[key][name.strip()] = value
+
+    return Model(**kwargs)
+
+
+def isfloat(value):
+    try:
+        float(value)
+        return True
+
+    except ValueError:
+        return False
