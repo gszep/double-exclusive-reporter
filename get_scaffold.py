@@ -76,14 +76,15 @@ def import_bifurcations():
 
     # get scaffold from bifrucation diagram
     if isfile('bifurcations') : # from file if precalculated
-        c6,c12,L,T = load_pickle('bifurcations')
+        with open('bifurcations','r') as file :
+            c6,c12,L,T = load(file)
 
     else :
         with open('bifurcations','w') as file : # otherwise calculate
 
-            print('Calculating steady states...')
+            print 'Calculating steady states...',
             c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
-            print('Done')
+            print 'Done'
 
             dump((c6,c12,L,T),file)
 
@@ -152,7 +153,7 @@ def main(crn_path,C6,C12,width,n_timepoints,N,c6_range,c12_range,clip,eps) :
                 j = generate_frame(j,model,space,Lattractor,Tattractor)
 
             i += 1
-        print('\n')
+        print '\n'
 
     finally : # create animation on exit
         create_animation(C6,C12)
@@ -169,20 +170,6 @@ def progress(count, total, status=''):
 
     stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
     stdout.flush()
-
-
-def load_pickle(pickle_file):
-    '''cross-compatible pickle loader'''
-    try:
-        with open(pickle_file, 'rb') as f:
-            pickle_data = load(f)
-    except UnicodeDecodeError as e:
-        with open(pickle_file, 'rb') as f:
-            pickle_data = load(f, encoding='latin1')
-    except Exception as e:
-        print('Unable to load data ', pickle_file, ':', e)
-        raise
-    return pickle_data
 
 
 # execute main program

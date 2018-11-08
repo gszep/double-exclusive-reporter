@@ -94,9 +94,9 @@ def generate_figure(c6,c12,L,T):
 def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,eps=1e-3) :
     '''parametrisation of main program'''
 
-    print('Calculating steady states...')
+    print 'Calculating steady states...',
     c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
-    print('Done')
+    print 'Done'
 
     generate_figure(c6,c12,L,T)
 

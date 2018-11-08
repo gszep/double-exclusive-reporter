@@ -1,6 +1,7 @@
 from numpy import array,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full
 from numpy.linalg import norm
 from scipy.ndimage import laplace
+<<<<<<< HEAD
 
 from .roots import roots_parallel
 from re import sub,search,finditer
@@ -10,6 +11,9 @@ from yaml import load
 class Model(object) :
     '''Contains all we need to calculate steady states and simulate
     a chemical reaction system parsed from a crn file.'''
+=======
+from roots import roots_parallel
+>>>>>>> parent of 7452ce7... making get_scaffold.py compatible with python3
 
     def __init__(self,**kwargs) :
 
