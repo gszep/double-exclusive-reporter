@@ -1,9 +1,9 @@
-from numpy import array,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full
+from numpy import array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full
 from numpy.linalg import norm
 from scipy.ndimage import laplace
 
 from .roots import roots_parallel
-from re import sub,search,finditer
+from re import sub,search,finditer,findall
 from yaml import load
 
 
@@ -13,58 +13,79 @@ class Model(object) :
 
     def __init__(self,**kwargs) :
 
-        # parse all set parameters to attributes
-        for key in kwargs :
-            setattr(self, key, kwargs[key])
-
-        # parse out parameters and rates
-        for param in self.parameters :
-            setattr(self, param, self.parameters[param])
-
-        # substitute in parameter values
-        for rate in self.rates :
-            if self.rates[rate] in self.parameters :
-                setattr(self, rate, self.parameters[self.rates[rate]])
-            else :
-                setattr(self, rate, self.rates[rate])
+        self.expressions = {}
+        self.parse_args(kwargs)
 
         # convert boundary condition keyword
-        if self.spatial['boundary'] == 'ZeroFlux' : self.boundary = 'nearest'
-        if self.spatial['boundary'] == 'Periodic' : self.boundary = 'wrap'
+        if self.expressions['boundary'] == 'self.ZeroFlux' :
+            self.boundary = 'nearest'
+        if self.expressions['boundary'] == 'self.Periodic' :
+            self.boundary = 'wrap'
+        del self.expressions['boundary']
 
-        ###### converting to dimensionless parameters ######
+        # evaluate expressions
+        for key,expression in self.expressions.items() :
+            setattr(self, key, expression)
 
-        # inihibitions
-        self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
-        self.nu = array([self.dR,self.dS]) + self.growth
+        # evaluate expression
+        # print expression
+        # setattr(self, key, eval(expression))
 
-        # activations
-        self.beta = self.capacity * array([(self.aL*self.a1R*self.KGR_76)/(self.dL + self.growth),(self.aT*self.a1S*self.KGS_81)/(self.dT + self.growth)])
-        self.mu = array([self.dL,self.dT]) + self.growth
+        # ###### converting to dimensionless parameters ######
+        #
+        # # inihibitions
+        # self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
+        # self.nu = array([self.dR,self.dS]) + self.growth
+        #
+        # # activations
+        # self.beta = self.capacity * array([(self.aL*self.a1R*self.KGR_76)/(self.dL + self.growth),(self.aT*self.a1S*self.KGS_81)/(self.dT + self.growth)])
+        # self.mu = array([self.dL,self.dT]) + self.growth
+        #
+        # # baseline inhibitor production and  saturation
+        # self.omega = array([self.a0_76/(self.a1R*self.KGR_76),self.a0_81/(self.a1S*self.KGS_81)])
+        # self.Omega = array([self.KGR_76,self.KGS_81])
+        #
+        # # signalling hill functions
+        # self.n = array([self.nR,self.nS])
+        # self.exponents = array([self.nT,self.nL])
+        #
+        # # signalling dissociation constants
+        # self.k = array([1.0/self.KR6,1.0/self.KS12])
+        #
+        # # diffusion coefficients
+        # self.D = array([self.c6,self.c12])
+        #
+        # # one dimensional lattice of states
+        # self.epsilon = 1e-5
+        # self.state = { 'diffusables':full((self.nx,2),self.epsilon),
+        #                'activators':full((self.nx,2),self.epsilon),
+        #                'inhibitors':full((self.nx,2),self.epsilon) }
+        #
+        # self.space = linspace(0,self.xmax,self.nx)
+        # self.time = array([0.0])
+        # self.dx = self.space[1]-self.space[0]
 
-        # baseline inhibitor production and  saturation
-        self.omega = array([self.a0_76/(self.a1R*self.KGR_76),self.a0_81/(self.a1S*self.KGS_81)])
-        self.Omega = array([self.KGR_76,self.KGS_81])
+    def parse_args(self,kwargs):
+        '''parse dictionary of keyword arguments'''
 
-        # signalling hill functions
-        self.n = array([self.nR,self.nS])
-        self.exponents = array([self.nT,self.nL])
+        for key in kwargs :
+            value = kwargs[key]
 
-        # signalling dissociation constants
-        self.k = array([1.0/self.KR6,1.0/self.KS12])
+            if type(value) is dict :
+                self.parse_args(value)
 
-        # diffusion coefficients
-        self.D = array([self.c6,self.c12])
+            elif type(value) is str :
+                for var_name in unique(findall('\w+',value)) :
 
-        # one dimensional lattice of states
-        self.epsilon = 1e-5
-        self.state = { 'diffusables':full((self.nx,2),self.epsilon),
-                       'activators':full((self.nx,2),self.epsilon),
-                       'inhibitors':full((self.nx,2),self.epsilon) }
+                    if not isfloat(var_name) :
+                        value = sub(var_name,'self.'+var_name,value)
 
-        self.space = linspace(0,self.xmax,self.nx)
-        self.time = array([0.0])
-        self.dx = self.space[1]-self.space[0]
+                self.expressions[key] = value
+                setattr(self, key, 0.0 )
+
+            else :
+                setattr(self, key, value )
+
 
     def laplacian(self,states):
         return array([ laplace(state,mode=self.boundary)/self.dx**2 for state in states.T ]).T
@@ -257,5 +278,5 @@ def isfloat(value):
         float(value)
         return True
 
-    except ValueError:
+    except (ValueError,TypeError):
         return False
