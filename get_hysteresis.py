@@ -15,7 +15,7 @@ def get_args() :
                         help='path to crn file')
     parser.add_argument('--c12_const', type=float, default=120,
                         help='constant value of c12 in nM',metavar='value')
-    parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-1,1e6],
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-1,1e5],
                         help='input range for c6 in nM', metavar=('min','max'))
     parser.add_argument('--N', type=int, default=250 ,metavar='gridpoints',
                         help='number of grid points per dimension to use')
