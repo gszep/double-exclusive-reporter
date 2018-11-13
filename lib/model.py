@@ -16,24 +16,12 @@ class Model(object) :
         self.expressions = {}
         self.parse_args(kwargs)
 
-        # convert boundary condition keyword
-        if self.expressions['boundary'] == 'self.ZeroFlux' :
-            self.boundary = 'nearest'
-        if self.expressions['boundary'] == 'self.Periodic' :
-            self.boundary = 'wrap'
-        del self.expressions['boundary']
+        self.set_boundary_condition()
+        self.set_initial_condition()
 
-        # evaluate expressions
-        for key,expression in self.expressions.items() :
-            setattr(self, key, expression)
+        ###### converting to dimensionless parameters ######
 
-        # evaluate expression
-        # print expression
-        # setattr(self, key, eval(expression))
-
-        # ###### converting to dimensionless parameters ######
-        #
-        # # inihibitions
+        # inihibitions
         # self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
         # self.nu = array([self.dR,self.dS]) + self.growth
         #
@@ -65,15 +53,19 @@ class Model(object) :
         # self.time = array([0.0])
         # self.dx = self.space[1]-self.space[0]
 
+
     def parse_args(self,kwargs):
-        '''parse dictionary of keyword arguments'''
+        '''parse dictionary of keyword arguments to private variables'''
 
         for key in kwargs :
             value = kwargs[key]
 
+            # recursive call on dictionaries
             if type(value) is dict :
+                setattr(self, '_'+key, value )
                 self.parse_args(value)
 
+            # parse mathematical expressions as strings
             elif type(value) is str :
                 for var_name in unique(findall('\w+',value)) :
 
@@ -81,14 +73,90 @@ class Model(object) :
                         value = sub(var_name,'self.'+var_name,value)
 
                 self.expressions[key] = value
-                setattr(self, key, 0.0 )
 
+            # parse reactions as strings
+            elif type(value) is list :
+                for i,item in enumerate(value) :
+                    for var_name in unique(findall('\w+',item)) :
+
+                        if not isfloat(var_name) :
+                            value[i] = sub(var_name,'self.'+var_name,value[i])
+
+                self.reactions = value
+
+            # parse numbers
+            elif value is not None :
+                setattr(self, '_'+key, value )
+
+
+    def get_property(self,key,expression=False,setter=False):
+        '''return getter and setter for given attribute key/expression'''
+
+        if not expression : # numerical value
+
+            def fget(self):
+                return getattr(self,key)
+
+            if setter :
+                def fset(self, value):
+                    setattr(self,key,value)
             else :
-                setattr(self, key, value )
+                fset = None
+
+        else : # mathematical expression
+
+            def fget(self):
+                return eval(key)
+            fset = None
+
+        return fget,fset
+
+
+    def set_boundary_condition(self):
+        '''convert boundary condition keyword'''
+
+        if self.expressions['boundary'] == 'self._ZeroFlux' :
+            self._boundary = 'nearest'
+
+        if self.expressions['boundary'] == 'self._Periodic' :
+            self._boundary = 'wrap'
+
+        del self.expressions['boundary']
+
+
+    def set_initial_condition(self):
+        '''set given intial conditions and evaulate mathematical expressions'''
+
+        # link properties to private variables
+        for key,value in self.__dict__.items():
+            if key != 'expressions' and key != 'reactions':
+
+                if key == '_init' : # loop through initial conditions
+                    for key,value in value.items() :
+
+                        setattr(self, '_'+key, full(self._dimensions*(self._nx,),value) )
+                        setattr(self.__class__, key, property(*self.get_property('_'+key,setter=True)) )
+
+                    # use initial conditions to identify state variables
+                    states = self._init.keys()
+                    prop = property(lambda self : { state:getattr(self,'_'+state) for state in states })
+                    setattr(self.__class__, 'states', prop )
+
+                    del self._init
+
+                else : # assign all other variables
+                    setattr(self.__class__, key[1:], property(*self.get_property(key)) )
+
+        # evaluate mathematical expressions
+        for key,expression in self.expressions.items() :
+            setattr(self.__class__, key, property(*self.get_property(expression,expression=True)) )
+
+        del self.expressions
 
 
     def laplacian(self,states):
         return array([ laplace(state,mode=self.boundary)/self.dx**2 for state in states.T ]).T
+
 
     def time_step(self) :
 
@@ -226,6 +294,15 @@ def fromcrn(file_path) :
         # import as string without comments
         file_string = sub(r'(//).*',' ',file.read())
 
+        # parse reactions
+        kwargs['reactions'] = []
+        pattern = r'[\w\[\]\{\}\(\)*/\-+\^ ]*->[\w\[\]\{\}\(\)*/\-+\^ ]*'
+        for match in finditer(pattern,file_string) :
+
+                reaction = match.group()
+                reaction = reaction.replace('^','**')
+                kwargs['reactions'] += [ reaction ]
+
         # convert to yaml compatible syntax
         file_string = file_string.replace(']','}')
         file_string = file_string.replace('[','{')
@@ -241,8 +318,8 @@ def fromcrn(file_path) :
 
                 # format as yaml
                 value = value.strip() if isfloat(value) else '"'+value.strip()+'"'
-                json_format = '"'+name.strip()+'":'+value
-                file_string = file_string.replace(item,json_format)
+                yaml_format = '"'+name.strip()+'":'+value
+                file_string = file_string.replace(item,yaml_format)
 
         # parse each directive to dictionary
         pattern = r'(?<=directive ).*?(?=(directive|init))'
@@ -269,6 +346,15 @@ def fromcrn(file_path) :
 
                         value = float(value) if isfloat(value) else value.strip()
                         kwargs[key][name.strip()] = value
+
+        # parse initial conditions
+        kwargs['init'] = {}
+        pattern = r'init[ ]*\w+[ ]*[0-9.eE+-]+'
+        for match in finditer(pattern,file_string) :
+
+                item = match.group()
+                _,name,value = item.split(' ')
+                kwargs['init'][name.strip()] = float(value)
 
     return Model(**kwargs)
 
