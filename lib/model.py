@@ -13,7 +13,6 @@ class Model(object) :
 
     def __init__(self,**kwargs) :
 
-        self.expressions = {}
         self.parse_args(kwargs)
 
         self.set_boundary_condition()
@@ -55,103 +54,128 @@ class Model(object) :
 
 
     def parse_args(self,kwargs):
-        '''parse dictionary of keyword arguments to private variables'''
+        '''parse keyword arguments to private variables'''
 
-        for key in kwargs :
-            value = kwargs[key]
+        for key,value in kwargs.items() :
+            attr_name = '_'+key
 
-            # recursive call on dictionaries
-            if type(value) is dict :
-                setattr(self, '_'+key, value )
-                self.parse_args(value)
-
-            # parse mathematical expressions as strings
-            elif type(value) is str :
-                for var_name in unique(findall('\w+',value)) :
-
-                    if not isfloat(var_name) :
-                        value = sub(var_name,'self.'+var_name,value)
-
-                self.expressions[key] = value
-
-            # parse reactions as strings
-            elif type(value) is list :
-                for i,item in enumerate(value) :
-                    for var_name in unique(findall('\w+',item)) :
-
-                        if not isfloat(var_name) :
-                            value[i] = sub(var_name,'self.'+var_name,value[i])
-
-                self.reactions = value
-
-            # parse numbers
-            elif value is not None :
-                setattr(self, '_'+key, value )
+            value = self.parse_type(value)
+            setattr(self,attr_name,value)
 
 
-    def get_property(self,key,expression=False,setter=False):
-        '''return getter and setter for given attribute key/expression'''
+    def parse_type(self,value):
+        '''parse all data types'''
+        dtype = type(value)
 
-        if not expression : # numerical value
+        if dtype is dict :
+            value = self.parse_dict(value)
 
+        elif dtype is list :
+            value = self.parse_list(value)
+
+        elif dtype is str :
+            value = self.parse_str(value)
+
+        elif dtype is type(None) :
+            value = None
+
+        elif not isnumber(value) :
+            raise Exception('type {} not parsable'.format(dtype))
+
+        return value
+
+
+    def parse_dict(self,value):
+        '''parse dictionary types recursivesly'''
+
+        self.parse_args(value)
+        return value
+
+
+    def parse_list(self,values):
+        '''iteratively parse through list types'''
+
+        for i,value in enumerate(values) :
+
+            value = self.parse_type(value)
+            values[i] = value
+
+        return values
+
+
+    def parse_str(self,value):
+        '''parse string types as expressions involving class attributes'''
+
+        # extract unique attribute names from value string
+        for attr_name in unique(findall('\w+',value)) :
+            if not isnumber(attr_name) :
+
+                # prepend 'self' to reference attributes
+                value = sub(attr_name,'self.'+attr_name,value)
+
+        return value
+
+
+    def set_property(self,attr_name,value=None,setter=False):
+        '''create getter/setter for given attribute name,value pair'''
+
+        # ensure attribute names are private
+        assert type(attr_name) is str, 'attr_name must be string'
+        attr_name = attr_name if attr_name[0] == '_' else '_'+attr_name
+
+        if value is None : # get value from existing attribute
             def fget(self):
-                return getattr(self,key)
+                return getattr(self,attr_name)
 
-            if setter :
-                def fset(self, value):
-                    setattr(self,key,value)
-            else :
-                fset = None
-
-        else : # mathematical expression
-
+        else : # or evaulate given mathematical expression
             def fget(self):
-                return eval(key)
+                return eval(value)
+
+        if setter : # optionally define setter
+            def fset(self,value):
+                setattr(self,attr_name,value)
+        else :
             fset = None
 
-        return fget,fset
+        # create property for private variable
+        setattr(self.__class__,attr_name[1:],property(fget,fset))
 
 
     def set_boundary_condition(self):
-        '''convert boundary condition keyword'''
+        '''parseing in boundary conditions'''
 
-        if self.expressions['boundary'] == 'self._ZeroFlux' :
+        if self._boundary == 'self.ZeroFlux' :
             self._boundary = 'nearest'
 
-        if self.expressions['boundary'] == 'self._Periodic' :
+        elif self._boundary == 'self.Periodic' :
             self._boundary = 'wrap'
 
-        del self.expressions['boundary']
+        else :
+            _,condition = self._boundary.split('.')
+            raise Exception('boundary condition "{}" not recognised'.format(condition))
 
+        self.set_property('boundary')
 
     def set_initial_condition(self):
         '''set given intial conditions and evaulate mathematical expressions'''
 
-        # link properties to private variables
-        for key,value in self.__dict__.items():
-            if key != 'expressions' and key != 'reactions':
+        # parameters
+        for parameter in self._parameters:
+            self.set_property(parameter)
 
-                if key == '_init' : # loop through initial conditions
-                    for key,value in value.items() :
+        # state variables
+        for state,value in self._init.items():
 
-                        setattr(self, '_'+key, full(self._dimensions*(self._nx,),value) )
-                        setattr(self.__class__, key, property(*self.get_property('_'+key,setter=True)) )
+            # set initial condition
+            init = full(self._dimensions*(self._nx,),value)
+            setattr(self,'_'+state,init)
 
-                    # use initial conditions to identify state variables
-                    states = self._init.keys()
-                    prop = property(lambda self : { state:getattr(self,'_'+state) for state in states })
-                    setattr(self.__class__, 'states', prop )
+            self.set_property(state,setter=True)
 
-                    del self._init
-
-                else : # assign all other variables
-                    setattr(self.__class__, key[1:], property(*self.get_property(key)) )
-
-        # evaluate mathematical expressions
-        for key,expression in self.expressions.items() :
-            setattr(self.__class__, key, property(*self.get_property(expression,expression=True)) )
-
-        del self.expressions
+        # evaluate rate expressions
+        for rate in self._rates:
+            expression = getattr(self,'_'+rate)
+            self.set_property(rate,expression)
 
 
     def laplacian(self,states):
@@ -317,7 +341,7 @@ def fromcrn(file_path) :
                 name,value = item.split(':')
 
                 # format as yaml
-                value = value.strip() if isfloat(value) else '"'+value.strip()+'"'
+                value = value.strip() if isnumber(value) else '"'+value.strip()+'"'
                 yaml_format = '"'+name.strip()+'":'+value
                 file_string = file_string.replace(item,yaml_format)
 
@@ -344,7 +368,7 @@ def fromcrn(file_path) :
                         value = value.replace('"','').replace('{','').replace('}','')
                         name = name.replace('"','').replace('{','').replace('}','')
 
-                        value = float(value) if isfloat(value) else value.strip()
+                        value = float(value) if isnumber(value) else value.strip()
                         kwargs[key][name.strip()] = value
 
         # parse initial conditions
@@ -359,7 +383,7 @@ def fromcrn(file_path) :
     return Model(**kwargs)
 
 
-def isfloat(value):
+def isnumber(value):
     try:
         float(value)
         return True
