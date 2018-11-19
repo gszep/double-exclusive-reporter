@@ -54,11 +54,11 @@ directive parameters
 ; autoC=3.31
 ; dC6 = 0.0
 ; dC12 = 0.0
-; C6 = 0.0; C12 = 0.0; c0 = 0.1; rr = 1.148; K = 2.7; rc = 67.5; es=0.5; tlag=0.0; ATC=0.0; IPTG=0.0
+; C6 = 0.0; C12 = 0.0; c0 = 0.1; r = 1.148; K = 2.7; rc = 67.5; es=0.5; tlag=0.0; ATC=0.0; IPTG=0.0
 ]
 
 directive rates [
-                growth = [grow] * rr * (1 - [x] / K);
+                growth = 1;// [grow]*r*(1 - [x] / K);
                 capacity = rc;
                 boundLuxR = [luxR]^2 * ((KR6*[c6])^nR + (KR12*[c12])^nR) / ((1.0 + KR6*[c6] + KR12*[c12])^nR);
                 boundLasR = [lasR]^2 * ((KS6*[c6])^nS + (KS12*[c12])^nS) / ((1.0 + KS6*[c6] + KS12*[c12])^nS);
@@ -68,7 +68,7 @@ directive rates [
 
 
 
-init x 0.1 |
+init x 1 |
 init grow 1 @ tlag |
 init luxR 0 |
 init lasR 0 |
@@ -83,7 +83,7 @@ init c12 120 |
 //0 c12 { spatial = { centralcore = { inner = 0.0; width = 0.5; outer = 120 } } } |
 
 // Cell growth and dilution
-->[[growth]*[x]] x |
+//->[[growth]*[x]] x |
 //yfp ->[[growth]*[yfp]] |
 //cfp ->[[growth]*[cfp]] |
 

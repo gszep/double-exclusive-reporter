@@ -1,7 +1,7 @@
 directive simulation {final=36; points=250 }
 directive spatial { dimensions = 1; xmax = 0.1; dt = 0.01; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
 directive parameters [
-  C6 = 0; C12 = 0; c0 = 0.001; rr = 1; K = 2; rc = 500; tlag = 0; tau = 0;
+  C6 = 0; C12 = 0; c0 = 0.001; r = 67.5; K = 2; rc = 40.0; tlag = 0; tau = 0;
   aYFP_PL = 1000; aCFP_PL = 1000;
 
   Ara = 0; nA = 1; KAra = 1; eA = 0.1; daiiA = 0.1; dA6 = 1; dA12 = 1;
@@ -45,10 +45,10 @@ directive rates [
   PTet = (1 / (1 + ([tetR] ^ nT)));
   boundLasR = (([lasR] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
   boundLuxR = (([luxR] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
-  growth = rr //*(1-[x]/K)
+  growth = 1.0 //r*(1-[x]/K)
 ]
 
-init x 0.001
+init x 1
 | init grow 1 @ tlag
 | init luxR 0
 | init lasR 0
@@ -57,7 +57,7 @@ init x 0.001
 | init c6 0
 | init c12 0
 
-| ->[([growth] * [x])] x
+//| ->[([growth] * [x])] x
 
 | ->[((rc * aR33) * [PTet])] luxR
 | luxR ->{dR}
@@ -69,11 +69,11 @@ init x 0.001
 
 | ->[((rc * aT) * [P81])] tetR
 | tetR ->{dT}
-//| tetR ->{(iA * ATC)}
+| tetR ->{(iA * ATC)}
 
 | ->[((rc * aL) * [P76])] lacI
 | lacI ->{dL}
-//| lacI ->{(iI * IPTG)}
+| lacI ->{(iI * IPTG)}
 
 //| ->[((rc * aYFP) * [P81])] yfp
 //| yfp ->{dYFP}
