@@ -45,17 +45,20 @@ def get_hysteresis(crn_path,N,c6_range,c12_const):
 
     diffusives = vstack([c6,c12]).T
     c_grid = model.get_inputs(diffusives).T
-    L,T = model.get_steady_state(c_grid)
+    L,T,S,R = model.get_steady_state(diffusives).T
 
-    return c6,c12,L,T
+    return c6,c12,L,T,S,R
 
 
-def generate_figure(c6,c12,L,T,c12_const):
+def generate_figure(c6,c12,L,T,S,R,c12_const):
     '''main program figure display'''
 
     figure(figsize=(10,10))
-    plot(c6,10**L,'cyan',marker='.',linestyle='')
-    plot(c6,10**T,'gold',marker='.',linestyle='')
+    plot(c6,L,'cyan',marker='.',linestyle='')
+    plot(c6,T,'gold',marker='.',linestyle='')
+
+    plot(c6,S,'gray',marker='.',linestyle='')
+    plot(c6,R,'gray',marker='.',linestyle='')
 
     xscale('log')
     yscale('log')
@@ -69,11 +72,11 @@ def generate_figure(c6,c12,L,T,c12_const):
 def main(crn_path,N,c12_const,c6_range) :
     '''parametrisation of main program'''
 
-    print 'Calculating steady states...',
-    c6,c12,L,T = get_hysteresis(crn_path,N,c6_range,c12_const)
-    print 'Done'
+    print('Calculating steady states...')
+    c6,c12,L,T,S,R = get_hysteresis(crn_path,N,c6_range,c12_const)
+    print('Done')
 
-    generate_figure(c6,c12,L,T,c12_const)
+    generate_figure(c6,c12,L,T,S,R,c12_const)
 
 
 # execute main program

@@ -1,80 +1,89 @@
-from numpy import array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full
-from numpy.linalg import norm
+from numpy import array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul
+from numpy.random import uniform
+
+from sympy.functions.combinatorial.factorials import binomial
 from scipy.ndimage import laplace
 
-from .roots import roots_parallel
+from collections import defaultdict
 from re import sub,search,finditer,findall
 from yaml import load
 
+from .roots import roots_parallel
+from scipy import optimize
 
 class Model(object) :
     '''Contains all we need to calculate steady states and simulate
     a chemical reaction system parsed from a crn file.'''
 
     def __init__(self,**kwargs) :
+        self._parse_args(kwargs)
 
-        self.parse_args(kwargs)
+        self._set_boundary()
+        self._set_parameters()
 
-        self.set_boundary_condition()
-        self.set_initial_condition()
+        self._set_states()
+        self._set_rates()
+
+        self._set_stoichiometry()
+        self._set_propensity()
 
         ###### converting to dimensionless parameters ######
 
         # inihibitions
-        # self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
-        # self.nu = array([self.dR,self.dS]) + self.growth
-        #
-        # # activations
-        # self.beta = self.capacity * array([(self.aL*self.a1R*self.KGR_76)/(self.dL + self.growth),(self.aT*self.a1S*self.KGS_81)/(self.dT + self.growth)])
-        # self.mu = array([self.dL,self.dT]) + self.growth
-        #
-        # # baseline inhibitor production and  saturation
-        # self.omega = array([self.a0_76/(self.a1R*self.KGR_76),self.a0_81/(self.a1S*self.KGS_81)])
-        # self.Omega = array([self.KGR_76,self.KGS_81])
-        #
-        # # signalling hill functions
-        # self.n = array([self.nR,self.nS])
-        # self.exponents = array([self.nT,self.nL])
-        #
-        # # signalling dissociation constants
-        # self.k = array([1.0/self.KR6,1.0/self.KS12])
-        #
-        # # diffusion coefficients
-        # self.D = array([self.c6,self.c12])
-        #
-        # # one dimensional lattice of states
-        # self.epsilon = 1e-5
-        # self.state = { 'diffusables':full((self.nx,2),self.epsilon),
-        #                'activators':full((self.nx,2),self.epsilon),
-        #                'inhibitors':full((self.nx,2),self.epsilon) }
-        #
-        # self.space = linspace(0,self.xmax,self.nx)
-        # self.time = array([0.0])
-        # self.dx = self.space[1]-self.space[0]
+        self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
+        self.nu = array([self.dR,self.dS]) + self.growth
+
+        # activations
+        self.beta = self.capacity * array([(self.aL*self.a1R*self.KGR_76)/(self.dL + self.growth),(self.aT*self.a1S*self.KGS_81)/(self.dT + self.growth)])
+        self.mu = array([self.dL,self.dT]) + self.growth
+
+        # baseline inhibitor production and  saturation
+        self.omega = array([self.a0_76/(self.a1R*self.KGR_76),self.a0_81/(self.a1S*self.KGS_81)])
+        self.Omega = array([self.KGR_76,self.KGS_81])
+
+        # signalling hill functions
+        self.n = array([self.nR,self.nS])
+        self.exponents = array([self.nT,self.nL])
+
+        # signalling dissociation constants
+        self.k = array([1.0/self.KR6,1.0/self.KS12])
+
+        # diffusion coefficients
+        self.D = array([self.c6,self.c12])
+
+        # one dimensional lattice of states
+        self.epsilon = 1e-5
+        self.state = { 'diffusables':full((self._nx,2),self.epsilon),
+                       'activators':full((self._nx,2),self.epsilon),
+                       'inhibitors':full((self._nx,2),self.epsilon) }
+
+        self.space = linspace(0,self._xmax,self._nx)
+        self.time = 0.0
+        self.dx = self.space[1]-self.space[0]
 
 
-    def parse_args(self,kwargs):
+    def _parse_args(self,kwargs):
         '''parse keyword arguments to private variables'''
 
         for key,value in kwargs.items() :
             attr_name = '_'+key
 
-            value = self.parse_type(value)
+            value = self._parse_type(value)
             setattr(self,attr_name,value)
 
 
-    def parse_type(self,value):
+    def _parse_type(self,value):
         '''parse all data types'''
         dtype = type(value)
 
         if dtype is dict :
-            value = self.parse_dict(value)
+            value = self._parse_dict(value)
 
         elif dtype is list :
-            value = self.parse_list(value)
+            value = self._parse_list(value)
 
         elif dtype is str :
-            value = self.parse_str(value)
+            value = self._parse_str(value)
 
         elif dtype is type(None) :
             value = None
@@ -85,25 +94,25 @@ class Model(object) :
         return value
 
 
-    def parse_dict(self,value):
+    def _parse_dict(self,value):
         '''parse dictionary types recursivesly'''
 
-        self.parse_args(value)
+        self._parse_args(value)
         return value
 
 
-    def parse_list(self,values):
+    def _parse_list(self,values):
         '''iteratively parse through list types'''
 
         for i,value in enumerate(values) :
 
-            value = self.parse_type(value)
+            value = self._parse_type(value)
             values[i] = value
 
         return values
 
 
-    def parse_str(self,value):
+    def _parse_str(self,value):
         '''parse string types as expressions involving class attributes'''
 
         # extract unique attribute names from value string
@@ -116,7 +125,7 @@ class Model(object) :
         return value
 
 
-    def set_property(self,attr_name,value=None,setter=False):
+    def _set_property(self,attr_name,value=None,setter=False):
         '''create getter/setter for given attribute name,value pair'''
 
         # ensure attribute names are private
@@ -128,6 +137,10 @@ class Model(object) :
                 return getattr(self,attr_name)
 
         else : # or evaulate given mathematical expression
+
+            # precompile statements for speed boost
+            value = compile(str(value),'<string>','eval')
+
             def fget(self):
                 return eval(value)
 
@@ -141,63 +154,138 @@ class Model(object) :
         setattr(self.__class__,attr_name[1:],property(fget,fset))
 
 
-    def set_boundary_condition(self):
+    def _set_boundary(self):
         '''parseing in boundary conditions'''
 
         if self._boundary == 'self.ZeroFlux' :
-            self._boundary = 'nearest'
+            self.boundary = 'nearest'
 
         elif self._boundary == 'self.Periodic' :
-            self._boundary = 'wrap'
+            self.boundary = 'wrap'
 
         else :
             _,condition = self._boundary.split('.')
             raise Exception('boundary condition "{}" not recognised'.format(condition))
 
-        self.set_property('boundary')
 
-    def set_initial_condition(self):
-        '''set given intial conditions and evaulate mathematical expressions'''
+    def _set_parameters(self):
+        '''set attribute for each parameter'''
 
-        # parameters
         for parameter in self._parameters:
-            self.set_property(parameter)
+            setattr(self,parameter,getattr(self,'_'+parameter))
 
-        # state variables
+
+    def _set_states(self,spatial=True):
+        '''create propery that returns current state variables'''
+
+        # set initial conditions
         for state,value in self._init.items():
 
-            # set initial condition
-            init = full(self._dimensions*(self._nx,),value)
-            setattr(self,'_'+state,init)
+            init = full(self._dimensions*(self._nx,),value) if spatial else value
+            setattr(self,state,init)
 
-            self.set_property(state,setter=True)
+        # identify state variables
+        self.names = list(self._init)
+        fget = lambda self : array([ getattr(self,name) for name in self.names ])
+        fset = lambda self,values : [ setattr(self,name,values[k]) for k,name in enumerate(self.names) ]
+        self.__class__.states = property(fget,fset)
 
-        # evaluate rate expressions
+        # identify diffusables
+        self.diffusibles = defaultdict(lambda : 0.0)
+        self.diffusibles.update(self._spatial['diffusibles'])
+
+
+    def _set_rates(self):
+        '''create propery that calcuates rates from current states'''
+
         for rate in self._rates:
             expression = getattr(self,'_'+rate)
-            self.set_property(rate,expression)
+            self._set_property(rate,expression)
 
 
-    def laplacian(self,states):
-        return array([ laplace(state,mode=self.boundary)/self.dx**2 for state in states.T ]).T
+    def _set_stoichiometry(self):
+        '''create property that returns stoichiometric coefficient matrix'''
+
+        self.stoichiometry = zeros((len(self.names),len(self._reactions)))
+
+        pattern = r'(?<=->)[ ]*[\[\{].*[\]\}]'
+        for i,reaction in enumerate(self._reactions) :
+
+            match = search(pattern,reaction)
+            rate = match.group()
+
+            reaction = reaction.replace(rate,'')
+            reactants,products = reaction.split('->')
+
+            self.stoichiometry.T[i] = array([ products.count('self.'+name)- \
+                                               reactants.count('self.'+name) \
+                                               for name in self.names ])
+
+
+    def _set_propensity(self):
+        '''create property that calculates propensities from current states'''
+
+        self.n_reactions = len(self._reactions)
+        self._propensity = self.n_reactions*[None]
+        self._nullcines = self.n_reactions*[None]
+
+        pattern = r'(?<=->)[ ]*[\[\{].*[\]\}]'
+        for i,reaction in enumerate(self._reactions) :
+            match = search(pattern,reaction)
+
+            rate = match.group().strip()
+            action_type = rate[0]+rate[-1]
+
+            # linear rates
+            rate = rate.replace('{','').replace('}','').replace('[','').replace(']','')
+            self._propensity[i] = str(rate)
+
+            # mass action rule
+            if action_type == '{}':
+                reactants,products = reaction.split('->')
+
+                state_product = '*'.join([
+                    ('('+str(binomial('state',reactants.count('self.'+name))
+                        .expand(func=True))+')').replace('state','self.'+name)
+                             for name in self.names if reactants.count('self.'+name) != 0 ])
+
+                self._propensity[i] += '*'+state_product
+
+            # precompile statements for speed boost
+            self._nullcines[i] = self._propensity[i]
+            #self._propensity[i] = compile(self._propensity[i],'<string>','eval')
+
+        fget = lambda self : array([ eval(self._propensity[i]) for i in range(self.n_reactions) ])
+        self.__class__.propensity = property(fget)
+
+        self._nullcines = [ '0.0'+'+'.join([ '*'.join([str(c),rate])
+                            for c,rate in zip(cs,self._nullcines) if c != 0 ])
+                            for cs in self.stoichiometry ]
+
+        # filtering out trivial nullcines
+        self.nontrivials = [ self.names[k] for k,nullcine in enumerate(self._nullcines) if nullcine != '0.0' ]
+        self._nullcines = [ nullcine for k,nullcine in enumerate(self._nullcines) if self.names[k] in self.nontrivials ]
+        self.n_nontrivials = len(self.nontrivials)
+
+
+    def reaction(self):
+        '''return reactive part of system'''
+
+        return matmul(self.stoichiometry,self.propensity)
+
+
+    def diffusion(self):
+        '''return diffusive part of system'''
+
+        return array([ self.diffusibles[name]*laplace(getattr(self,name), \
+                       mode=self.boundary)/self.dx**2 for name in self.names ])
 
 
     def time_step(self) :
+        '''propagate reaction-diffusion system using forward euler method'''
 
-        self.time = append(self.time,self.time[-1]+self.dt)
-        self.c = ( self.state['diffusables']/(self.k+self.state['diffusables']) )**self.n
-
-        self.state['inhibitors'] += self.mu*(
-            self.beta*(self.c*self.state['activators']**2+self.omega)\
-                     /(self.c*self.state['activators']**2*self.Omega+1)\
-                            - self.state['inhibitors']) * self.dt
-
-        self.state['activators'] += self.nu*(
-            sqrt(self.alpha)/(1+self.state['inhibitors'][:,::-1]**self.exponents)\
-                              - self.state['activators'] ) * self.dt
-
-        self.state['diffusables'] += self.D*self.laplacian(self.state['diffusables']) * self.dt
-        return True
+        self.states += ( self.reaction() + self.diffusion() )*self._dt
+        self.time += self._dt
 
     def get_diffusives(self,c) :
         '''return the concentrations of c6 and c12 in nM for given
@@ -209,47 +297,17 @@ class Model(object) :
         a given concentration of c6 and c12 in nM'''
         return (1+self.n*log(diffusives/(self.k+diffusives))/log(self.alpha) ).T
 
-    def get_nullcines(self,x,c,state=None) :
-        '''return implicit the value of nullcines f(x,c), such
-        that f(x,c)=0 gives the steady state concentration x,
-        given input signal c
+    def nullcines(self,states,parameters) :
+        '''return parametrised nontrivial nullcine values'''
 
-        --- parameters ---
-        x : <1darray>
-            array that has two numbers representing
-            concentrations of LacI and TetR
-        c : <1darray>
-            array that has two numbers between -1 and 1
-            representing the input signal range for
-            c6 and c12
+        self._set_states(spatial=False)
+        for k,name in enumerate(self.nontrivials):
+            setattr(self,name,states[k])
 
-        --- returns ---
-        nullcines : <1darray>
-            contains the values of f(x,c) for LacI and TetR
-            in array of the same shape as x and c
-        '''
+        for name,value in parameters.items():
+            setattr(self,name,value)
 
-
-        # transform to logspace
-        C = self.alpha**c
-        x = 10**(x*ones(C.shape))
-
-        # common calculations
-        offset = (self.beta-x*self.Omega)*C
-        scaling = self.beta*self.omega-x
-        rates = zeros(C.shape)
-
-        # calculate nullcines
-        rates[0] = (self.beta[1]*(C[1]+self.omega[1]*(1+x[0])**2)/ \
-                                 (C[1]*self.Omega[1]+(1+x[0])**2))**4
-        rates[1] =  self.beta[0]*(C[0]+self.omega[0]*(1+x[1]**4)**2)/ \
-                                 (C[0]*self.Omega[0]+(1+x[1]**4)**2)
-
-        nullcines = offset+scaling*(1+rates)**2
-        if state is not None :
-            return nullcines[state]
-        else :
-            return nullcines
+        return [ eval(self._nullcines[i]) for i in range(self.n_nontrivials) ]
 
     def get_steady_state(self,c,clip=None) :
         '''solves f(x,c)=0 for steady state concentration x,
@@ -273,30 +331,27 @@ class Model(object) :
         # flattening input
         input_shape = c.shape
         c.shape = (-1,2)
-        n_roots = 3
 
         # parallel solve for steady states
-        args_list = zip(c,c.shape[0]*[0])
-        L = roots_parallel(self.get_nullcines,interval=[-3,3],args=args_list,n_roots=n_roots,epsilon=0.01)
-        args_list = zip(c,c.shape[0]*[1])
-        T = roots_parallel(self.get_nullcines,interval=[-3,3],args=args_list,n_roots=n_roots,epsilon=0.01)
+        args = [ { 'c6':c6, 'c12':c12 } for c6,c12 in c ]
+        steady_states = roots_parallel(self.nullcines, interval=[-3,3], args=args, nvar=self.n_nontrivials)
 
-        # applying clipping threshold
-        if clip is not None :
-
-            x,y = c.T
-            for i in xrange(n_roots) :
-
-                mask = (L<clip)[:,i]
-                mask = (T<clip)[:,i]
-
-                L[:,i][(x<mean(x))*(y<mean(y))*mask] = -inf
-                T[:,i][(x<mean(x))*(y<mean(y))*mask] = -inf
+        # # applying clipping threshold
+        # if clip is not None :
+        #
+        #     x,y = c.T
+        #     for i in xrange(n_roots) :
+        #
+        #         mask = (L<clip)[:,i]
+        #         mask = (T<clip)[:,i]
+        #
+        #         L[:,i][(x<mean(x))*(y<mean(y))*mask] = -inf
+        #         T[:,i][(x<mean(x))*(y<mean(y))*mask] = -inf
 
         # return original shaped array
-        output_shape = input_shape[:-1] + (3,)
-        L.shape,T.shape = output_shape,output_shape
-        return L,T
+        output_shape = input_shape[:-1] + (self.n_nontrivials,)
+        steady_states.shape = output_shape
+        return steady_states
 
 
 def fromcrn(file_path) :

@@ -1,6 +1,8 @@
 from numpy import array,log10,ones
-from scipy.optimize import bisect
-from joblib import Parallel, delayed
+from numpy.random import uniform
+
+from scipy import optimize
+from joblib import Parallel,delayed
 
 
 def rootsearch(f,interval,dx=1e-3,args=()):
@@ -72,7 +74,6 @@ def roots(function, interval, args=(), epsilon=1e-3, n_roots=None ):
             if len(roots) is n_roots :
                 return ones(n_roots)*array(roots)
 
-
             # exclude root from new search interval
             _,lower = interval
 
@@ -80,7 +81,18 @@ def roots(function, interval, args=(), epsilon=1e-3, n_roots=None ):
             return ones(n_roots)*array(roots)
 
 
-def roots_parallel(function, interval, args=[()], epsilon=1e-3, n_roots=None ):
+def root(function,interval=[-5,5],args=(),nvar=1) :
+
+    initial_guess = 10.0**uniform(*tuple(interval),size=nvar)
+    optimization = optimize.root(function,initial_guess,args=args)
+
+    if optimization.success :
+        return optimization.x
+    else :
+        return root(function,interval,args,nvar)
+
+
+def roots_parallel(function, interval, args=[()], nvar=1 ):
     '''roots() function parallelised across a list of arguments
 
     ---parameters---
@@ -99,8 +111,8 @@ def roots_parallel(function, interval, args=[()], epsilon=1e-3, n_roots=None ):
     roots : ...<1darray>...
         tuples of array of roots of f(x)
     '''
-    root_list = Parallel(n_jobs=-1)(
-                delayed(roots)(function,interval=interval,args=arg,
-                n_roots=n_roots,epsilon=epsilon) for arg in args)
+    root_list = Parallel(n_jobs=1)(
+                delayed(root)(function,interval=interval,args=arg,nvar=nvar)
+                for arg in args)
 
     return array(root_list)

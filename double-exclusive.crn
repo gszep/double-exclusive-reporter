@@ -1,6 +1,6 @@
 directive simulator deterministic
 directive simulation { final=25.0; points=100; plots=[laci;tetr] }
-directive spatial { dimensions = 1; xmax = 0.1; dt = 0.01; nx = 10; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
+directive spatial { dimensions = 1; xmax = 0.1; dt = 0.01; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
 directive parameters
 
 [ a0_76 = 1.92
@@ -76,7 +76,7 @@ init laci 0 |
 init tetr 0 |
 init luxI 0 |
 init lasI 0.0 |
-init c6 120 |
+init c6 20 |
 init c12 120 |
 
 //0 c6 { spatial = { centralcore = { inner = 120; width = 0.5; outer = 0.0 } } } |
