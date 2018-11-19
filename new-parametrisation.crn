@@ -1,11 +1,25 @@
-directive simulation {final=36; points=250; plots=[(([x] * ([yfp] + [f510])) + yb0); (([x] * ([cfp] + [f430])) + cb0)]; }
+directive simulation {final=36; points=250 }
+directive spatial { dimensions = 1; xmax = 0.1; dt = 0.01; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
 directive parameters [
-  C6 = 0; C12 = 0; c0 = 0.001; r = 1; K = 2; rc = 1000; tlag = 0; tau = 0;
+  C6 = 0; C12 = 0; c0 = 0.001; rr = 1; K = 2; rc = 500; tlag = 0; tau = 0;
   aYFP_PL = 1000; aCFP_PL = 1000;
+
   Ara = 0; nA = 1; KAra = 1; eA = 0.1; daiiA = 0.1; dA6 = 1; dA12 = 1;
-  e76 = 0.021805579858064; e81 = 0.00440595380512616; aYFP = 1274.26099956776; aCFP = 672.060160664538;
-  KGR_76 = 0.00691924460159291; KGS_76 = 3.01010451105545E-08; KGR_81 = 4.32476269673692E-05; KGS_81 = 0.00399768727323658;
-  KR6 = 3.64223295416772E-05; KS6 = 1.42024063182907E-08; KR12 = 1.00897937199503E-08; KS12 = 0.016000761665582;
+
+  e76 = 0.021805579858064; e81 = 0.00440595380512616;
+  aYFP = 1274.26099956776; aCFP = 672.060160664538;
+
+  KGR_76 = 0.00691924460159291;
+  KGS_81 = 0.00399768727323658;
+  KR6 = 3.64223295416772E-05;
+  KS12 = 0.016000761665582;
+
+  // crosstalk
+  KGS_76 = 3.01010451105545E-08;
+  KGR_81 = 4.32476269673692E-05;
+  KS6 = 1.42024063182907E-08;
+  KR12 = 1.00897937199503E-08;
+
   nR = 0.642722875493168; nS = 1.10805708686687;
   aR33 = 6.95969436152435; aS175 = 3.06936203237316;
   dR = 9.96967967342647;
@@ -27,37 +41,50 @@ directive parameters [
 directive rates [
   P76 = (((e76 + (KGR_76 * [boundLuxR])) + (KGS_76 * [boundLasR])) / ((1 + (KGR_76 * [boundLuxR])) + (KGS_76 * [boundLasR])));
   P81 = (((e81 + (KGR_81 * [boundLuxR])) + (KGS_81 * [boundLasR])) / ((1 + (KGR_81 * [boundLuxR])) + (KGS_81 * [boundLasR])));
-  PBad = (((Ara ^ nA) + (eA * (KAra ^ nA))) / ((Ara ^ nA) + (KAra ^ nA)));
   PLac = (1 / (1 + ([lacI] ^ nL)));
   PTet = (1 / (1 + ([tetR] ^ nT)));
   boundLasR = (([lasR] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
   boundLuxR = (([luxR] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
-  growth = r*(1-[x]/K)
+  growth = rr //*(1-[x]/K)
 ]
 
-| init x c0
-| init c6 C6
-| init c12 C12
+init x 0.001
+| init grow 1 @ tlag
+| init luxR 0
+| init lasR 0
+| init lacI 0
+| init tetR 0
+| init c6 0
+| init c12 0
+
 | ->[([growth] * [x])] x
+
 | ->[((rc * aR33) * [PTet])] luxR
 | luxR ->{dR}
 | luxR ->[([growth] * [luxR])]
+
 | ->[((rc * aS175) * [PLac])] lasR
 | lasR ->{dR}
 | lasR ->[([growth] * [lasR])]
+
 | ->[((rc * aT) * [P81])] tetR
 | tetR ->{dT}
-| tetR ->{(iA * ATC)}
+//| tetR ->{(iA * ATC)}
+
 | ->[((rc * aL) * [P76])] lacI
 | lacI ->{dL}
-| lacI ->{(iI * IPTG)}
-| ->[((rc * aYFP) * [P81])] yfp
-| yfp ->{dYFP}
-| yfp ->[([growth] * [yfp])]
-| ->[((rc * aCFP) * [P76])] cfp
-| cfp ->{dCFP}
-| cfp ->[([growth] * [cfp])]
-| ->[(rc * autoYFP)] f510
-| f510 ->[([growth] * [f510])]
-| ->[(rc * autoCFP)] f430
-| f430 ->[([growth] * [f430])]
+//| lacI ->{(iI * IPTG)}
+
+//| ->[((rc * aYFP) * [P81])] yfp
+//| yfp ->{dYFP}
+//| yfp ->[([growth] * [yfp])]
+
+//| ->[((rc * aCFP) * [P76])] cfp
+//| cfp ->{dCFP}
+//| cfp ->[([growth] * [cfp])]
+
+//| ->[(rc * autoYFP)] f510
+//| f510 ->[([growth] * [f510])]
+
+//| ->[(rc * autoCFP)] f430
+//| f430 ->[([growth] * [f430])]

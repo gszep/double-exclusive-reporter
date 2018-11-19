@@ -29,33 +29,33 @@ class Model(object) :
 
         ###### converting to dimensionless parameters ######
 
-        # inihibitions
-        self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
-        self.nu = array([self.dR,self.dS]) + self.growth
-
-        # activations
-        self.beta = self.capacity * array([(self.aL*self.a1R*self.KGR_76)/(self.dL + self.growth),(self.aT*self.a1S*self.KGS_81)/(self.dT + self.growth)])
-        self.mu = array([self.dL,self.dT]) + self.growth
-
-        # baseline inhibitor production and  saturation
-        self.omega = array([self.a0_76/(self.a1R*self.KGR_76),self.a0_81/(self.a1S*self.KGS_81)])
-        self.Omega = array([self.KGR_76,self.KGS_81])
-
-        # signalling hill functions
-        self.n = array([self.nR,self.nS])
-        self.exponents = array([self.nT,self.nL])
-
-        # signalling dissociation constants
-        self.k = array([1.0/self.KR6,1.0/self.KS12])
-
-        # diffusion coefficients
-        self.D = array([self.c6,self.c12])
-
-        # one dimensional lattice of states
-        self.epsilon = 1e-5
-        self.state = { 'diffusables':full((self._nx,2),self.epsilon),
-                       'activators':full((self._nx,2),self.epsilon),
-                       'inhibitors':full((self._nx,2),self.epsilon) }
+        # # inihibitions
+        # self.alpha = array([(self.capacity*self.aR33)/(self.dR + self.growth),(self.capacity*self.aS175)/(self.dS+ self.growth)]) **2
+        # self.nu = array([self.dR,self.dS]) + self.growth
+        #
+        # # activations
+        # self.beta = self.capacity * array([(self.aL*self.a1R*self.KGR_76)/(self.dL + self.growth),(self.aT*self.a1S*self.KGS_81)/(self.dT + self.growth)])
+        # self.mu = array([self.dL,self.dT]) + self.growth
+        #
+        # # baseline inhibitor production and  saturation
+        # self.omega = array([self.a0_76/(self.a1R*self.KGR_76),self.a0_81/(self.a1S*self.KGS_81)])
+        # self.Omega = array([self.KGR_76,self.KGS_81])
+        #
+        # # signalling hill functions
+        # self.n = array([self.nR,self.nS])
+        # self.exponents = array([self.nT,self.nL])
+        #
+        # # signalling dissociation constants
+        # self.k = array([1.0/self.KR6,1.0/self.KS12])
+        #
+        # # diffusion coefficients
+        # self.D = array([self.c6,self.c12])
+        #
+        # # one dimensional lattice of states
+        # self.epsilon = 1e-5
+        # self.state = { 'diffusables':full((self._nx,2),self.epsilon),
+        #                'activators':full((self._nx,2),self.epsilon),
+        #                'inhibitors':full((self._nx,2),self.epsilon) }
 
         self.space = linspace(0,self._xmax,self._nx)
         self.time = 0.0
@@ -258,7 +258,7 @@ class Model(object) :
         fget = lambda self : array([ eval(self._propensity[i]) for i in range(self.n_reactions) ])
         self.__class__.propensity = property(fget)
 
-        self._nullcines = [ '0.0'+'+'.join([ '*'.join([str(c),rate])
+        self._nullcines = [ '+'.join(['0.0']+[ '*'.join([str(c),rate])
                             for c,rate in zip(cs,self._nullcines) if c != 0 ])
                             for cs in self.stoichiometry ]
 

@@ -15,7 +15,7 @@ def get_args() :
                         help='path to crn file')
     parser.add_argument('--c12_const', type=float, default=120,
                         help='constant value of c12 in nM',metavar='value')
-    parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-1,1e6],
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-1,1e5],
                         help='input range for c6 in nM', metavar=('min','max'))
     parser.add_argument('--N', type=int, default=250 ,metavar='gridpoints',
                         help='number of grid points per dimension to use')
@@ -44,13 +44,12 @@ def get_hysteresis(crn_path,N,c6_range,c12_const):
     model = fromcrn(crn_path)
 
     diffusives = vstack([c6,c12]).T
-    c_grid = model.get_inputs(diffusives).T
-    L,T,S,R = model.get_steady_state(diffusives).T
+    L,T,R,S,x = model.get_steady_state(diffusives).T
 
-    return c6,c12,L,T,S,R
+    return c6,c12,L,T,R,S,x
 
 
-def generate_figure(c6,c12,L,T,S,R,c12_const):
+def generate_figure(c6,c12,L,T,R,S,x,c12_const):
     '''main program figure display'''
 
     figure(figsize=(10,10))
@@ -59,7 +58,9 @@ def generate_figure(c6,c12,L,T,S,R,c12_const):
 
     plot(c6,S,'gray',marker='.',linestyle='')
     plot(c6,R,'gray',marker='.',linestyle='')
+    plot(c6,x,'gray',marker='.',linestyle='')
 
+    ylim(1e-3,)
     xscale('log')
     yscale('log')
 
@@ -73,10 +74,10 @@ def main(crn_path,N,c12_const,c6_range) :
     '''parametrisation of main program'''
 
     print('Calculating steady states...')
-    c6,c12,L,T,S,R = get_hysteresis(crn_path,N,c6_range,c12_const)
+    c6,c12,L,T,R,S,x = get_hysteresis(crn_path,N,c6_range,c12_const)
     print('Done')
 
-    generate_figure(c6,c12,L,T,S,R,c12_const)
+    generate_figure(c6,c12,L,T,R,S,x,c12_const)
 
 
 # execute main program

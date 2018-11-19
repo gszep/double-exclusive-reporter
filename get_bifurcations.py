@@ -48,20 +48,16 @@ def get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps):
     '''
 
     # initialisation of model
-    diffusives_range = array([c6_range,c12_range]).T
     model = fromcrn(crn_path)
 
-    c_range,cdash_range = model.get_inputs(diffusives_range)
-    c = linspace(*c_range,num=N)
-    cdash = linspace(*cdash_range,num=N)
+    c = linspace(*c6_range,num=N)
+    cdash = linspace(*c12_range,num=N)
 
-    x,y = meshgrid(c,cdash,copy=False)
-    c_grid = dstack([x,y])
+    c6,c12 = meshgrid(c,cdash,copy=False)
+    c_grid = dstack([c6,c12])
 
     # calculation of steady states
-    L,T = model.get_steady_state(c_grid,clip=clip)
-    c6,c12 = model.get_diffusives(c_grid).reshape(2,N,N)
-
+    L,T,R,S = model.get_steady_state(c_grid,clip=clip).T
     return c6,c12,L,T
 
 
