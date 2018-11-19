@@ -4,7 +4,7 @@ from lib.colors import cyan,yellow
 from sys import argv
 from argparse import ArgumentParser
 
-from numpy import linspace,logspace,meshgrid,vstack,dstack,inf,mean,ones,array
+from numpy import linspace,logspace,meshgrid,vstack,dstack,inf,mean,ones,array,log10
 from matplotlib.pyplot import *
 
 def get_args() :
@@ -15,10 +15,10 @@ def get_args() :
                         help='path to crn file')
     parser.add_argument('--N', type=int, default=50, metavar='gridpoints',
                         help='number of grid points per dimension to use')
-    parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-6,1e8],
-                        help='input range for c6 in nM',metavar=('min','max'))
-    parser.add_argument('--c12_range', nargs=2, type=float, default=[10**-0.5,1e5],
-                        help='input range for c12 in nM',metavar=('min','max'))
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[-6,8],
+                        help='log10 input range for c6 such that 10**input is in nM',metavar=('min','max'))
+    parser.add_argument('--c12_range', nargs=2, type=float, default=[-0.5,5],
+                        help='log10 input range for c12 such that 10**input is in nM',metavar=('min','max'))
     parser.add_argument('--clip', type=float,default=-0.5,metavar='value',
                         help='threshold concentration 10**clip below which system is off')
     parser.add_argument('--eps', type=float,default=1e-3,metavar='value',
@@ -50,14 +50,18 @@ def get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps):
     # initialisation of model
     model = fromcrn(crn_path)
 
-    c = linspace(*c6_range,num=N)
-    cdash = linspace(*c12_range,num=N)
+    c = logspace(*c6_range,num=N)
+    cdash = logspace(*c12_range,num=N)
 
     c6,c12 = meshgrid(c,cdash,copy=False)
     c_grid = dstack([c6,c12])
 
     # calculation of steady states
-    L,T,R,S = model.get_steady_state(c_grid,clip=clip).T
+    steady_state = model.get_steady_state(c_grid,clip=clip)
+
+    L = steady_state[:,:,[s.lower() for s in model.nontrivials ].index('laci')]
+    T = steady_state[:,:,[s.lower() for s in model.nontrivials ].index('tetr')]
+
     return c6,c12,L,T
 
 
@@ -66,13 +70,8 @@ def generate_figure(c6,c12,L,T):
 
     figure(figsize=(10,10))
 
-    contour(c6,c12,T[:,:,-1]-L[:,:,0],levels=[0],colors=['k'])
-    contour(c6,c12,L[:,:,-1]-T[:,:,0],levels=[0],colors=['k'])
-
-    contourf(c6,c12,L[:,:,0],cmap='cyan',alpha=0.25)
-    contourf(c6,c12,L[:,:,-1],cmap='cyan',alpha=0.25)
-    contourf(c6,c12,T[:,:,0],cmap='yellow',alpha=0.25)
-    contourf(c6,c12,T[:,:,-1],cmap='yellow',alpha=0.25)
+    contourf(c6,c12,log10(L),cmap='cyan',alpha=0.25)
+    contourf(c6,c12,log10(T),cmap='yellow',alpha=0.25)
 
     xlabel(r'Diffusive Signal $C_{6}$ / nM',fontsize=16)
     ylabel(r'Diffusive Signal $C_{12}$ / nM',fontsize=16)
