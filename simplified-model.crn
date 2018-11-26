@@ -1,45 +1,33 @@
 directive simulator deterministic
-directive simulation {final=236; points=250; plots=[lacI;tetR] }
-directive spatial { dimensions = 1; xmax = 0.1; dt = 0.01; nx = 5; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
-directive parameters [
+directive simulation { final=25.0; points=100; plots=[z0;z2] }
+directive parameters [ x0 = 1.0; c0 = 1.0; d0 = 0.0 ]
 
-  // activations
-  J = 1.0;
-  Jdash = 1.0;
 
-  // inhibitions
-  H = 1.0;
-  Hdash = 1.0;
 
-  // degredations
-  dL = 1.0; dT = 1.0;
-  dR = 1.0; dS = 1.0
-]
+init z0 x0 |
 
-directive rates [
-  alpha = 1.0*[luxR]*[c6];
-  beta = 1.0*[lasR]*[c12]
-]
+init z1 x0 |
 
-init luxR 1 |
-init lasR 1 |
-init lacI 0 |
-init tetR 1 |
-init c6 1 |
-init c12 1
+init z2 x0 |
 
-| ->[H] luxR
-| luxR ->[[tetR]]
-| luxR ->{dR}
+init d d0 |
 
-| ->[Hdash] lasR
-| lasR ->[[lacI]]
-| lasR ->{dS}
+init c c0 |
 
-| ->[J] lacI
-| ->[alpha] lacI
-| lacI ->{dL}
 
-| ->[Jdash] tetR
-| ->[beta] tetR
-| tetR ->{dT}
+
+z0 + z2 -> z2 + z1 |
+
+z2 + z0 -> z0 + z1 |
+
+z1 + z0 -> z0 + z0 |
+
+z1 + z2 -> z2 + z2 |
+
+z0 + d -> d + z1 |
+
+z1 + d -> d + z2 |
+
+z2 + c -> c + z1 |
+
+z1 + c -> c + z0

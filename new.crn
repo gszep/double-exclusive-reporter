@@ -54,10 +54,6 @@ directive rates [
   boundLuxR = [luxR]^2 * ((KR6*[c6])^nR + (KR12*[c12])^nR) / ((1+KR6*[c6]+KR12*[c12])^nR)
 ]
 
-init luxR 0 |
-init lasR 0 |
-init lacI 0 |
-init tetR 0 |
 init c6 120 |
 init c12 120
 

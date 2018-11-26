@@ -6,7 +6,9 @@ from scipy.ndimage import laplace
 
 from collections import defaultdict
 from re import findall,sub,search
+
 from .utils import isnumber
+from .colors import colors
 
 from .roots import roots_parallel
 from scipy import optimize
@@ -16,20 +18,29 @@ class Model(object) :
     a chemical reaction system parsed from a crn file.'''
 
     def __init__(self,**kwargs) :
-        self._parse_args(kwargs)
 
-        self._set_boundary()
+        # default timegrid
+        self.time = 0.0
+        self._dt = 0.01
+
+        self._parse_args(kwargs)
         self._set_parameters()
 
-        self._set_states()
+        self._set_states(spatial=hasattr(self,'_spatial'))
         self._set_rates()
 
         self._set_stoichiometry()
         self._set_propensity()
 
-        self.space = linspace(0,self._xmax,self._nx)
-        self.dx = self.space[1]-self.space[0]
-        self.time = 0.0
+        if hasattr(self,'_spatial') :
+            print(colors.yellow,'[model]',colors.reset,'setting spatial directive')
+
+            self._set_boundary()
+            self.space = linspace(0,self._xmax,self._nx)
+            self.dx = self.space[1]-self.space[0]
+
+        else :
+            print(colors.yellow,'[model]',colors.reset,'non-spatial directive')
 
 
     def _parse_args(self,kwargs):
@@ -127,16 +138,18 @@ class Model(object) :
     def _set_boundary(self):
         '''parseing in boundary conditions'''
 
-        if self._boundary == 'self.ZeroFlux' :
-            self.boundary = 'nearest'
+        if hasattr(self, '_boundary'):
 
-        elif self._boundary == 'self.Periodic' :
-            self.boundary = 'wrap'
+            if 'ZeroFlux' in self._boundary :
+                self.boundary = 'nearest'
 
+            elif 'Periodic' in self._boundary :
+                self.boundary = 'wrap'
+
+            else :
+                raise Exception('boundary condition "{}" not recognised'.format(self._boundary))
         else :
-            _,condition = self._boundary.split('.')
-            raise Exception('boundary condition "{}" not recognised'.format(condition))
-
+            raise Exception('no boundary condition provided')
 
     def _set_parameters(self):
         '''set attribute for each parameter'''
@@ -151,6 +164,10 @@ class Model(object) :
         # set initial conditions
         for state,value in self._init.items():
 
+            # substitute parameter values
+            if type(value) is str :
+                value = getattr(self,value)
+
             init = full(self._dimensions*(self._nx,),value) if spatial else value
             setattr(self,state,init)
 
@@ -162,7 +179,9 @@ class Model(object) :
 
         # identify diffusables
         self.diffusibles = defaultdict(lambda : 0.0)
-        self.diffusibles.update(self._spatial['diffusibles'])
+        if spatial :
+            self.diffusibles.update({ key:value for param in self._spatial['diffusibles']
+                                      for key,value in param.items() })
 
 
     def _set_rates(self):
@@ -182,7 +201,7 @@ class Model(object) :
         for i,reaction in enumerate(self._reactions) :
 
             match = search(pattern,reaction)
-            rate = match.group()
+            rate = match.group() if match is not None else '{1.0}'
 
             reaction = reaction.replace(rate,'')
             reactants,products = reaction.split('->')
@@ -203,7 +222,7 @@ class Model(object) :
         for i,reaction in enumerate(self._reactions) :
             match = search(pattern,reaction)
 
-            rate = match.group().strip()
+            rate = match.group().strip() if match is not None else '{1.0}'
             action_type = rate[0]+rate[-1]
 
             # linear rates
@@ -234,7 +253,7 @@ class Model(object) :
         self._nullcines = [ nullcine for k,nullcine in enumerate(self._nullcines) if self.names[k] in self.nontrivials ]
         self.n_nontrivials = len(self.nontrivials)
 
-        # evaluate remaining expressions
+        # evaluate remaining expressions TODO(gszep) this is crap.. need refactoring
         for attr_name,value in vars(self).items():
             if type(value) is str :
 
@@ -267,16 +286,21 @@ class Model(object) :
         self.__class__.propensity = property(fget)
 
     def reaction(self):
-        '''return reactive part of system'''
+        '''return reactive term'''
 
+        # TODO(gszep) matmul each time inefficient?
         return matmul(self.stoichiometry,self.propensity)
 
 
     def diffusion(self):
-        '''return diffusive part of system'''
+        '''return diffusive term'''
 
-        return array([ self.diffusibles[name]*laplace(getattr(self,name), \
-                       mode=self.boundary)/self.dx**2 for name in self.names ])
+        if hasattr(self,'_spatial') : # TODO(gszep) checking each time inefficient?
+            return array([ self.diffusibles[name]*laplace(getattr(self,name), \
+                           mode=self.boundary)/self.dx**2 for name in self.names ])
+
+        else : # no diffusion for non-spatial setting
+            return array([ 0.0 for name in self.names ])
 
 
     def time_step(self) :
@@ -285,46 +309,28 @@ class Model(object) :
         self.states += ( self.reaction() + self.diffusion() )*self._dt
         self.time += self._dt
 
-    def get_diffusives(self,c) :
-        '''return the concentrations of c6 and c12 in nM for given
-        dimensionless signal inputs c and cdash '''
-        return ( self.k / (self.alpha**((1-c)/self.n)-1) ).T
-
-    def get_inputs(self,diffusives) :
-        '''return the dimensionless signal inputs c and cdash for
-        a given concentration of c6 and c12 in nM'''
-        return (1+self.n*log(diffusives/(self.k+diffusives))/log(self.alpha) ).T
 
     def nullcines(self,states,parameters) :
-        '''return parametrised nontrivial nullcine values'''
+        '''evaluate nontrivial nullcines at given state and parameter values'''
 
-        self._set_states(spatial=False)
+        # updating parameters and state variable
         for k,name in enumerate(self.nontrivials):
             setattr(self,name,states[k])
 
         for name,value in parameters.items():
             setattr(self,name,value)
 
+        # evaluating nullcines
         return [ eval(self._nullcines[i]) for i in range(self.n_nontrivials) ]
+
+        # NOTE: unexpected behaviour in joblib.Parallel leads to
+        # NameError: name 'self' is not defined
+        # when the above return statement is rewritten as
+        # return [ eval(nullcine) for nullcine in self._nullcines ]
 
     def get_steady_state(self,c,clip=None) :
         '''solves f(x,c)=0 for steady state concentration x,
-        given input signal c, which can be a grid of values
-
-        --- parameters ---
-        c : <ndarray>
-            ndarray whose last axis has two numbers
-            between -1 and 1 representing the input
-            signal range for c6 and c12
-        clip : <float>
-            Clipping threshold x**clip, below which
-            the 'off' state is defined
-
-        --- returns ---
-        x : <ndarray>
-            steady state values for LacI and TetR in
-            an array of the same shape as c
-        '''
+        given input signal c, which can be a grid of values'''
 
         # flattening input
         input_shape = c.shape
@@ -332,7 +338,10 @@ class Model(object) :
 
         # parallel solve for steady states
         args = [ { 'c6':c6, 'c12':c12 } for c6,c12 in c ]
+
+        self._set_states(spatial=False)
         steady_states = roots_parallel(self.nullcines, interval=[-5,5], args=args, nvar=self.n_nontrivials)
+        self._set_states(spatial=True)
 
         # return original shaped array
         output_shape = input_shape[:-1] + (self.n_nontrivials,)
