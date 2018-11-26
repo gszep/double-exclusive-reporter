@@ -1,11 +1,11 @@
-from lib.model import fromcrn
+from lib.parser import fromcrn
 from get_bifurcations import get_bifurcations
 from lib.colors import cyan,yellow
 
 from sys import stdout
 from argparse import ArgumentParser
 
-from numpy import linspace,logspace,meshgrid,vstack,dstack,inf,mean,ones,array,argmin
+from numpy import linspace,logspace,meshgrid,vstack,dstack,inf,mean,ones,array,argmin,log10
 from matplotlib.pyplot import *
 
 from os import system
@@ -27,11 +27,11 @@ def get_args() :
     parser.add_argument('--n_timepoints', type=int, default=30, metavar='timepoints',
                         help='number of time points for animation')
 
-    parser.add_argument('--N', type=int, default=150, metavar='gridpoints',
+    parser.add_argument('--N', type=int, default=50, metavar='gridpoints',
                         help='number of grid points per dimension to use')
-    parser.add_argument('--c6_range', nargs=2, type=float, default=[1e-6,1e8],
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[-6,8],
                         help='input range for c6 in nM',metavar=('min','max'))
-    parser.add_argument('--c12_range', nargs=2, type=float, default=[10**-0.5,1e5],
+    parser.add_argument('--c12_range', nargs=2, type=float, default=[-0.5,5],
                         help='input range for c12 in nM',metavar=('min','max'))
     parser.add_argument('--clip', type=float,default=None,metavar='value',
                         help='threshold concentration 10**clip below which system is off')
@@ -61,17 +61,17 @@ def get_scaffold(model,c6,c12,L,T):
 
     Lattractor = array([
         L[argmin(abs(c12[:,0]-c12x)),argmin(abs(c6[0]-c6x))]
-        for c6x,c12x in model.state['diffusables'] ]).reshape(-1)
+        for c6x,c12x in zip(model.c6,model.c12) ]).reshape(-1)
 
     Tattractor = array([
         T[argmin(abs(c12[:,0]-c12x)),argmin(abs(c6[0]-c6x))]
-        for c6x,c12x in model.state['diffusables'] ]).reshape(-1)
+        for c6x,c12x in zip(model.c6,model.c12) ]).reshape(-1)
 
-    space = linspace(0,model.xmax,len(Lattractor))
+    space = linspace(0,model._xmax,len(Lattractor))
     return space,Lattractor,Tattractor
 
 
-def import_bifurcations():
+def import_bifurcations(crn_path,N,c6_range,c12_range,clip,eps):
     '''imports stored bifrucation diagram; otherwise calculates it'''
 
     # get scaffold from bifrucation diagram
@@ -82,7 +82,7 @@ def import_bifurcations():
         with open('bifurcations','w') as file : # otherwise calculate
 
             print('Calculating steady states...')
-            c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
+            c6,c12,L,T,atc,iptg = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
             print('Done')
 
             dump((c6,c12,L,T),file)
@@ -96,17 +96,18 @@ def generate_frame(j,model,space,L,T):
     figure(figsize=(10,10))
 
     # plot scaffolds
-    plot(space,10**L,'.',color='darkcyan')
-    plot(space,10**T,'.',color='gold')
+    plot(space,L,'.',color='darkcyan')
+    plot(space,T,'.',color='gold')
     plot(-1,-1,'k.',label='Local Steady State')
 
     # plot system state
-    plot(model.space,model.state['inhibitors'].T[0],color='darkcyan')
-    plot(model.space,model.state['inhibitors'].T[1],color='gold')
-    plot(-1,-1,'k',label='Concentration at $t = {}h$'.format(model.time[-1]))
+    n,m = list(model._plots)
+    plot(model.space,getattr(model,n),color='darkcyan')
+    plot(model.space,getattr(model,m),color='gold')
+    plot(-1,-1,'k',label='Concentration at $t = {}h$'.format(model.time))
 
     legend(fontsize=16)
-    xlim(0,model.xmax)
+    xlim(0,model._xmax)
 
     ylabel(r'Inhibitors $L(x,t),T(x,t)$ / nM',fontsize=16);
     xlabel(r'Space $x$ / cm',fontsize=16);
@@ -129,21 +130,21 @@ def main(crn_path,C6,C12,width,n_timepoints,N,c6_range,c12_range,clip,eps) :
 
     # import model from file
     model = fromcrn(crn_path)
-    c6,c12,L,T = import_bifurcations()
+    c6,c12,L,T = import_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
 
     # initial condition
-    model.state['diffusables'][:,0][model.space<width] = model.xmax * C6 / width
-    model.state['diffusables'][:,1][model.space>(model.xmax-width)] = model.xmax * C12 / width
+    model.c6[model.space<width] = model._xmax * C6 / width
+    model.c12[model.space>(model._xmax-width)] = model._xmax * C12 / width
 
     # evolve system
     i,j = 0,0
-    n = int(model.final/model.dt)
+    n = int(model._final/model._dt)
 
     try :
 
         # run simulation
-        while model.time[-1] < model.final :
-            progress(model.time[-1], model.final, status='Simulating')
+        while model.time < model._final :
+            progress(model.time, model._final, status='Simulating')
             model.time_step()
 
             # output results at given temporal resolution

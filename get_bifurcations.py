@@ -1,4 +1,4 @@
-from lib.model import fromcrn
+from lib.parser import fromcrn
 from lib.colors import cyan,yellow
 
 from sys import argv
@@ -59,16 +59,21 @@ def get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps):
     # calculation of steady states
     steady_state = model.get_steady_state(c_grid,clip=clip)
 
-    L = steady_state[:,:,[s.lower() for s in model.nontrivials ].index('laci')]
-    T = steady_state[:,:,[s.lower() for s in model.nontrivials ].index('tetr')]
+    i,j = list(model._plots)
+    L = steady_state[:,:,model.nontrivials.index(i)]
+    T = steady_state[:,:,model.nontrivials.index(j)]
 
-    return c6,c12,L,T
+    atc = model.ATC
+    iptg = model.IPTG
+
+    return c6,c12,L,T,atc,iptg
 
 
-def generate_figure(c6,c12,L,T):
+def generate_figure(c6,c12,L,T,atc,iptg):
     '''main program figure display'''
 
     figure(figsize=(10,10))
+    title('ATC = {} IPTG = {}'.format(atc,iptg),fontsize=16,y=1.04)
 
     contourf(c6,c12,log10(L),cmap='cyan',alpha=0.25)
     contourf(c6,c12,log10(T),cmap='yellow',alpha=0.25)
@@ -79,10 +84,10 @@ def generate_figure(c6,c12,L,T):
     yscale('log')
 
     # labelling regions
-    text(1e-4, 1.5,r'$Off$ State',fontsize=16)
-    text(120, 3000,r'$Bistable$ Region',fontsize=16)
-    text(1e-5, 100,r'$Monostable$ Region',fontsize=16)
-    text(1e3, 10,r'$Monostable$ Region',fontsize=16)
+    # text(1e-4, 1.5,r'$Off$ State',fontsize=16)
+    # text(120, 3000,r'$Bistable$ Region',fontsize=16)
+    # text(1e-5, 100,r'$Monostable$ Region',fontsize=16)
+    # text(1e3, 10,r'$Monostable$ Region',fontsize=16)
     show()
 
 
@@ -90,10 +95,10 @@ def main(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],clip=-0.5,ep
     '''parametrisation of main program'''
 
     print('Calculating steady states...')
-    c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
+    c6,c12,L,T,atc,iptg = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
     print('Done')
 
-    generate_figure(c6,c12,L,T)
+    generate_figure(c6,c12,L,T,atc,iptg)
 
 
 # execute main program

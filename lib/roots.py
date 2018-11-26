@@ -111,7 +111,7 @@ def roots_parallel(function, interval, args=[()], nvar=1 ):
     roots : ...<1darray>...
         tuples of array of roots of f(x)
     '''
-    root_list = Parallel(n_jobs=1)(
+    root_list = Parallel(n_jobs=-1)(
                 delayed(root)(function,interval=interval,args=arg,nvar=nvar)
                 for arg in args)
 

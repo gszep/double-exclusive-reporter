@@ -1,0 +1,45 @@
+directive simulator deterministic
+directive simulation {final=236; points=250; plots=[lacI;tetR] }
+directive spatial { dimensions = 1; xmax = 0.1; dt = 0.01; nx = 5; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
+directive parameters [
+
+  // activations
+  J = 1.0;
+  Jdash = 1.0;
+
+  // inhibitions
+  H = 1.0;
+  Hdash = 1.0;
+
+  // degredations
+  dL = 1.0; dT = 1.0;
+  dR = 1.0; dS = 1.0
+]
+
+directive rates [
+  alpha = 1.0*[luxR]*[c6];
+  beta = 1.0*[lasR]*[c12]
+]
+
+init luxR 1 |
+init lasR 1 |
+init lacI 0 |
+init tetR 1 |
+init c6 1 |
+init c12 1
+
+| ->[H] luxR
+| luxR ->[[tetR]]
+| luxR ->{dR}
+
+| ->[Hdash] lasR
+| lasR ->[[lacI]]
+| lasR ->{dS}
+
+| ->[J] lacI
+| ->[alpha] lacI
+| lacI ->{dL}
+
+| ->[Jdash] tetR
+| ->[beta] tetR
+| tetR ->{dT}

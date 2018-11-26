@@ -5,8 +5,8 @@ from sympy.functions.combinatorial.factorials import binomial
 from scipy.ndimage import laplace
 
 from collections import defaultdict
-from re import sub,search,finditer,findall
-from yaml import load
+from re import findall,sub,search
+from .utils import isnumber
 
 from .roots import roots_parallel
 from scipy import optimize
@@ -90,7 +90,7 @@ class Model(object) :
             if not isnumber(attr_name) :
 
                 # prepend 'self' to reference attributes
-                value = sub(attr_name,'self.'+attr_name,value)
+                value = sub('\\b'+attr_name+'\\b','self.'+attr_name,value)
 
         return value
 
@@ -223,10 +223,7 @@ class Model(object) :
 
             # precompile statements for speed boost
             self._nullcines[i] = self._propensity[i]
-            #self._propensity[i] = compile(self._propensity[i],'<string>','eval')
 
-        fget = lambda self : array([ eval(self._propensity[i]) for i in range(self.n_reactions) ])
-        self.__class__.propensity = property(fget)
 
         self._nullcines = [ '+'.join(['0.0']+[ '*'.join([str(c),rate])
                             for c,rate in zip(cs,self._nullcines) if c != 0 ])
@@ -237,6 +234,37 @@ class Model(object) :
         self._nullcines = [ nullcine for k,nullcine in enumerate(self._nullcines) if self.names[k] in self.nontrivials ]
         self.n_nontrivials = len(self.nontrivials)
 
+        # evaluate remaining expressions
+        for attr_name,value in vars(self).items():
+            if type(value) is str :
+
+                for k,nullcine in enumerate(self._nullcines) :
+                    expression = '('+getattr(self,attr_name)+')'
+                    self._nullcines[k] = sub('self.'+attr_name[1:],expression,nullcine)
+
+        for attr_name,value in vars(self).items():
+            if type(value) is str :
+
+                for k,nullcine in enumerate(self._nullcines) :
+                    expression = '('+getattr(self,attr_name)+')'
+                    self._nullcines[k] = sub('self.'+attr_name[1:],expression,nullcine)
+
+        for attr_name,value in vars(self).items():
+            if type(value) is str :
+
+                for k,nullcine in enumerate(self._nullcines) :
+                    expression = '('+getattr(self,attr_name)+')'
+                    self._nullcines[k] = sub('self.'+attr_name[1:],expression,nullcine)
+
+
+        for i,_ in enumerate(self._nullcines) :
+            self._nullcines[i] = compile(self._nullcines[i],'<string>','eval')
+
+        for i,_ in enumerate(self._propensity) :
+            self._propensity[i] = compile(self._propensity[i],'<string>','eval')
+
+        fget = lambda self : array([ eval(self._propensity[i]) for i in range(self.n_reactions) ])
+        self.__class__.propensity = property(fget)
 
     def reaction(self):
         '''return reactive part of system'''
@@ -304,114 +332,9 @@ class Model(object) :
 
         # parallel solve for steady states
         args = [ { 'c6':c6, 'c12':c12 } for c6,c12 in c ]
-        steady_states = roots_parallel(self.nullcines, interval=[-3,3], args=args, nvar=self.n_nontrivials)
-
-        # # applying clipping threshold
-        # if clip is not None :
-        #
-        #     x,y = c.T
-        #     for i in xrange(n_roots) :
-        #
-        #         mask = (L<clip)[:,i]
-        #         mask = (T<clip)[:,i]
-        #
-        #         L[:,i][(x<mean(x))*(y<mean(y))*mask] = -inf
-        #         T[:,i][(x<mean(x))*(y<mean(y))*mask] = -inf
+        steady_states = roots_parallel(self.nullcines, interval=[-5,5], args=args, nvar=self.n_nontrivials)
 
         # return original shaped array
         output_shape = input_shape[:-1] + (self.n_nontrivials,)
         steady_states.shape = output_shape
         return steady_states
-
-
-def fromcrn(file_path) :
-    '''Creates model object from parameters in a given crn file
-
-    --- parameters ---
-    file_path : <str>
-        path to crn file to read parameters from
-
-    --- returns ---
-    model : <Model>
-        model object initialised with parameters
-    '''
-
-    # open and read file as string
-    kwargs = { }
-    with open(file_path, 'r') as file:
-
-        # import as string without comments
-        file_string = sub(r'(//).*',' ',file.read())
-
-        # parse reactions
-        kwargs['reactions'] = []
-        pattern = r'[\w\[\]\{\}\(\)*/\-+\^ ]*->[\w\[\]\{\}\(\)*/\-+\^ ]*'
-        for match in finditer(pattern,file_string) :
-
-                reaction = match.group()
-                reaction = reaction.replace('^','**')
-                kwargs['reactions'] += [ reaction ]
-
-        # convert to yaml compatible syntax
-        file_string = file_string.replace(']','}')
-        file_string = file_string.replace('[','{')
-        file_string = file_string.replace(';',',')
-        file_string = file_string.replace('=',':')
-
-        # find assigned parameters
-        pattern = r'([0-9|\w]+)[ ]*:[ ]*[\w0-9.eE+-]+'
-        for match in finditer(pattern,file_string) :
-
-                item = match.group()
-                name,value = item.split(':')
-
-                # format as yaml
-                value = value.strip() if isnumber(value) else '"'+value.strip()+'"'
-                yaml_format = '"'+name.strip()+'":'+value
-                file_string = file_string.replace(item,yaml_format)
-
-        # parse each directive to dictionary
-        pattern = r'(?<=directive ).*?(?=(directive|init))'
-        for match in finditer(pattern,file_string.replace('\n',' ')) :
-            item = match.group()
-
-            # attempt to parse automagically
-            if 'simulator' not in item :
-                key,value = item.split(" ",1)
-                try : kwargs[key] = load(value)
-
-                # otherwise parse manually
-                except :
-
-                    kwargs[key] = {}
-                    for s in value[1:-1].split(',') :
-                        name,value = s.strip().split(':')
-
-                        # convert to python compatible syntax
-                        value = value.replace('^','**')
-
-                        value = value.replace('"','').replace('{','').replace('}','')
-                        name = name.replace('"','').replace('{','').replace('}','')
-
-                        value = float(value) if isnumber(value) else value.strip()
-                        kwargs[key][name.strip()] = value
-
-        # parse initial conditions
-        kwargs['init'] = {}
-        pattern = r'init[ ]*\w+[ ]*[0-9.eE+-]+'
-        for match in finditer(pattern,file_string) :
-
-                item = match.group()
-                _,name,value = item.split(' ')
-                kwargs['init'][name.strip()] = float(value)
-
-    return Model(**kwargs)
-
-
-def isnumber(value):
-    try:
-        float(value)
-        return True
-
-    except (ValueError,TypeError):
-        return False

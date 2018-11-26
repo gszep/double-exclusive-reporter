@@ -1,4 +1,4 @@
-from lib.model import fromcrn
+from lib.parser import fromcrn
 from lib.colors import cyan,yellow
 
 from sys import argv
