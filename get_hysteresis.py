@@ -1,5 +1,5 @@
-from lib.parser import fromcrn
-from lib.colors import cyan,yellow
+from crnpy.parser import fromcrn
+from crnpy.colors import cyan,yellow
 
 from sys import argv
 from argparse import ArgumentParser

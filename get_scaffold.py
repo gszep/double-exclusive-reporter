@@ -1,6 +1,6 @@
-from lib.parser import fromcrn
+from crnpy.parser import fromcrn
 from get_bifurcations import get_bifurcations
-from lib.colors import cyan,yellow
+from crnpy.colors import cyan,yellow
 
 from sys import stdout
 from argparse import ArgumentParser

@@ -1,5 +1,5 @@
-from lib.parser import fromcrn
-from lib.colors import cyan,yellow
+from crnpy.parser import fromcrn
+from crnpy.colors import cyan,yellow
 
 from sys import argv
 from argparse import ArgumentParser
@@ -13,9 +13,9 @@ def get_args() :
 
     parser.add_argument('crn_path', type=str,
                         help='path to crn file')
-    parser.add_argument('--N', type=int, default=50, metavar='gridpoints',
+    parser.add_argument('--N', type=int, default=120, metavar='gridpoints',
                         help='number of grid points per dimension to use')
-    parser.add_argument('--c6_range', nargs=2, type=float, default=[-6,8],
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[-0.5,5],
                         help='log10 input range for c6 such that 10**input is in nM',metavar=('min','max'))
     parser.add_argument('--c12_range', nargs=2, type=float, default=[-0.5,5],
                         help='log10 input range for c12 such that 10**input is in nM',metavar=('min','max'))
@@ -57,11 +57,10 @@ def get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps):
     c_grid = dstack([c6,c12])
 
     # calculation of steady states
-    steady_state = model.get_steady_state(c_grid,clip=clip)
+    steady_state = model.get_steady_state(c_grid,clip=clip,logspace=True)
 
-    i,j = list(model._plots)
-    L = steady_state[:,:,model.nontrivials.index(i)]
-    T = steady_state[:,:,model.nontrivials.index(j)]
+    L = steady_state[:,:,model.nontrivials.index('lacI')]
+    T = steady_state[:,:,model.nontrivials.index('tetR')]
 
     atc = model.ATC
     iptg = model.IPTG
@@ -75,8 +74,9 @@ def generate_figure(c6,c12,L,T,atc,iptg):
     figure(figsize=(10,10))
     title('ATC = {} IPTG = {}'.format(atc,iptg),fontsize=16,y=1.04)
 
-    contourf(c6,c12,log10(L),cmap='cyan',alpha=0.25)
-    contourf(c6,c12,log10(T),cmap='yellow',alpha=0.25)
+    contourf(c6,c12,L,cmap='cyan',alpha=0.5)
+    contourf(c6,c12,T,cmap='yellow',alpha=0.5)
+    contour(c6,c12,T-L,levels=[0.0],colors=['k'],alpha=0.5)
 
     xlabel(r'Diffusive Signal $C_{6}$ / nM',fontsize=16)
     ylabel(r'Diffusive Signal $C_{12}$ / nM',fontsize=16)
