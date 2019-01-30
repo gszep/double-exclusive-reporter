@@ -1,8 +1,8 @@
 directive simulation {final=36; points=250; plots=[lacI;tetR]; }
 directive parameters [
 
-  ATC = 0;
-  IPTG = 0;
+  ATC = 0.5;
+  IPTG = 0.5;
 
   capacity = 45;
   growth = 1;
@@ -62,5 +62,5 @@ directive rates [
 | lacI ->[(growth * [lacI])]
 | lacI ->{dL}
 
-| tetR ->{(iA * ATC)}
-| lacI ->{(iI * IPTG)}
+//| tetR ->{(iA * ATC)}
+//| lacI ->{(iI * IPTG)}

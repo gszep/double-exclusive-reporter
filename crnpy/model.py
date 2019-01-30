@@ -1,4 +1,4 @@
-from numpy import array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul
+from numpy import array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul,ndarray
 from numpy.random import uniform
 
 from sympy.functions.combinatorial.factorials import binomial
@@ -168,8 +168,13 @@ class Model(object) :
             if type(value) is str :
                 value = getattr(self,value)
 
-            init = full(self._dimensions*(self._nx,),value) if spatial else value
-            setattr(self,state,init)
+            if type(value) is ndarray :
+                setattr(self,state,value)
+
+            if isnumber(value) :
+
+                init = full(self._dimensions*(self._nx,),value) if spatial else value
+                setattr(self,state,init)
 
         # identify state variables
         self.names = list(self._init)
@@ -338,6 +343,9 @@ class Model(object) :
 
         # parallel solve for steady states
         args = [ { 'c6':c6, 'c12':c12 } for c6,c12 in c ]
+
+        for state,value in zip(self.names,self.states) :
+            self._init[state] = value
 
         self._set_states(spatial=False)
         steady_states = roots_parallel(self.nullcines, interval=[-5,5], args=args, nvar=self.n_nontrivials, logspace=logspace)

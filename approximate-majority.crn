@@ -1,0 +1,9 @@
+directive simulation { final=0.1; points=200; plots=[([X]-[Y])/([X]+[Y])] }
+directive parameters [r = 2000]
+directive simulator pde
+directive spatial { nx=101; xmax=1; dt=0.00001;  diffusibles=[X=1.0;Y=1.0;B=1.0]; dimensions=1; boundary = ZeroFlux }
+
+| X + Y ->{r} X + B
+| Y + X ->{r} Y + B
+| X + B ->{r} X + X
+| Y + B ->{r} Y + Y

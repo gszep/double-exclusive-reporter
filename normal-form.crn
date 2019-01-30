@@ -1,0 +1,23 @@
+directive simulator deterministic
+directive simulation { final=25.0; points=1500; plots=[lacI;tetR] }
+directive spatial { dimensions = 1; xmax = 1.0; dt = 0.01; nx = 101; diffusibles=[c6=1.0;c12=1.0];  boundary = ZeroFlux }
+directive parameters [
+
+  // cusp location and width
+  width=1;
+  cusp=1;
+  r = 2000;
+]
+
+directive rates [
+  alpha = [c6]-[c12];
+  beta = [c6]+[c12];
+]
+
+init lacI 0 |
+init tetR 0 |
+init c6 0 |
+init c12 0
+
+| ->[r*(([beta]-cusp)*[lacI]-width*[lacI]^3+[alpha])] lacI
+| ->[r*(([beta]-cusp)*[tetR]-width*[tetR]^3-[alpha])] tetR
