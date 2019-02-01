@@ -30,7 +30,7 @@ def get_args() :
     return vars(parser.parse_args())
 
 
-def get_bifurcations(crn_path,N,c6_range,c12_range,atc,iptg,clip,eps):
+def get_bifurcations(crn_path,N=50,c6_range=[1e-6,1e8],c12_range=[10**-0.5,1e5],atc=0.0,iptg=0.0,clip=-0.5,eps=1e-3):
     '''Calculate bifrucation diagram for double exclusive reporter
     for a given range of diffusives c6 and c12.
 
