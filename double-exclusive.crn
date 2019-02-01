@@ -1,16 +1,27 @@
-directive simulation {final=36; points=250; plots=[lacI;tetR]; }
+directive simulator deterministic
+directive simulation { final=25.0; points=100; plots=[lacI;tetR] }
+directive spatial { dimensions = 1; xmax = 0.1; dt = 0.01; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
 directive parameters [
-
-  ATC = 0.5;
-  IPTG = 0.5;
 
   capacity = 45;
   growth = 1;
 
+  ATC = 0.0;
+  IPTG = 0.0;
+
+  iA = 0.138082104629675, {interval=Log; distribution=Uniform(0.1,1000); variation=Random};
+  iI = 31.3980528981304, {interval=Log; distribution=Uniform(0.1,1000); variation=Random};
+
   e76 = 0.0222004548846533, {interval=Log; distribution=TruncatedNormal(0.0283731,0.000417802584960888,0.0001,1); variation=Random};
   e81 = 0.00463017494123398, {interval=Log; distribution=TruncatedNormal(0.00406032,0.000400570842673303,0.0001,1); variation=Random};
+
+  aR33 = 9.55471864366551, {interval=Log; distribution=TruncatedNormal(7.58927,0.151079780248715,1,100); variation=Random};
+  aS175 = 3.08700959768627, {interval=Log; distribution=TruncatedNormal(2.8966,0.0263173896881891,1,100); variation=Random};
+  aL = 0.999155705262643, {interval=Log; distribution=Uniform(0.01,1); variation=Random};
+  aT = 0.528443698307629, {interval=Log; distribution=Uniform(0.01,1); variation=Random};
   aYFP = 1050.04010320438, {interval=Log; distribution=TruncatedNormal(4227.9,418.5558505146,1,100000); variation=Random};
   aCFP = 700.145536284998, {interval=Log; distribution=TruncatedNormal(1344.6,16.0245436752502,1,100000); variation=Random};
+
   KGR_76 = 0.00288010324702258, {interval=Log; distribution=TruncatedNormal(0.0303402,0.00583397805960907,1E-08,1); variation=Random};
   KGS_76 = 2.36049957798709E-06, {interval=Log; distribution=TruncatedNormal(0.000193689,1.25399362039845E-05,1E-08,1); variation=Random};
   KGR_81 = 2.363171520228E-05, {interval=Log; distribution=TruncatedNormal(3.31926E-05,7.86993646734203E-06,1E-08,1); variation=Random};
@@ -19,22 +30,17 @@ directive parameters [
   KS6 = 2.15320951728781E-07, {interval=Log; distribution=TruncatedNormal(4.1429E-07,1.73045080831557E-07,1E-08,1); variation=Random};
   KR12 = 1.02951629448247E-08, {interval=Log; distribution=TruncatedNormal(2.89478E-08,7.78212053363349E-09,1E-08,1); variation=Random};
   KS12 = 0.0162461708127628, {interval=Log; distribution=TruncatedNormal(0.0101749,0.000332188199670006,1E-08,1); variation=Random};
+
   nR = 0.609517858699933, {interval=Real; distribution=TruncatedNormal(0.707681,0.0063455102237724,0.5,2); variation=Random};
   nS = 1.14904891153001, {interval=Real; distribution=TruncatedNormal(1.2359,0.0206823838084492,0.5,2); variation=Random};
-
-  aR33 = 9.55471864366551, {interval=Log; distribution=TruncatedNormal(7.58927,0.151079780248715,1,100); variation=Random};
-  aS175 = 3.08700959768627, {interval=Log; distribution=TruncatedNormal(2.8966,0.0263173896881891,1,100); variation=Random};
-  dR = 9.96004785040492, {interval=Log; distribution=TruncatedNormal(9.98763,0.0119286210435238,0.01,10); variation=Random};
-
-  aL = 0.999155705262643, {interval=Log; distribution=Uniform(0.01,1); variation=Random};
-  aT = 0.528443698307629, {interval=Log; distribution=Uniform(0.01,1); variation=Random};
   nL = 1.0608014990237, {interval=Real; distribution=Uniform(1,5); variation=Random};
   nT = 4.8458334328221, {interval=Real; distribution=Uniform(1,5); variation=Random};
+
   dL = 0.398597430840307, {interval=Log; distribution=Uniform(0.001,10); variation=Random};
   dT = 0.638862275302401, {interval=Log; distribution=Uniform(0.001,10); variation=Random};
-
-  iA = 0.138082104629675, {interval=Log; distribution=Uniform(0.1,1000); variation=Random};
-  iI = 31.3980528981304, {interval=Log; distribution=Uniform(0.1,1000); variation=Random};
+  dR = 9.96004785040492, {interval=Log; distribution=TruncatedNormal(9.98763,0.0119286210435238,0.01,10); variation=Random};
+  dYFP = 0.203081789770649, {interval=Log; distribution=TruncatedNormal(0.309771,0.00275883489901081,0.001,1); variation=Random};
+  dCFP = 0.411424454974054, {interval=Log; distribution=TruncatedNormal(0.593084,0.00617495748973222,0.001,1); variation=Random};
 ]
 
 directive rates [
@@ -45,6 +51,9 @@ directive rates [
   boundLasR = (([lasR] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
   boundLuxR = (([luxR] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
 ]
+
+init c6 120 |
+init c12 120
 
 | ->[((capacity * aR33) * [PTet])] luxR
 | luxR ->{dR}
@@ -62,5 +71,13 @@ directive rates [
 | lacI ->[(growth * [lacI])]
 | lacI ->{dL}
 
-//| tetR ->{(iA * ATC)}
-//| lacI ->{(iI * IPTG)}
+| tetR ->{(iA * ATC)}
+| lacI ->{(iI * IPTG)}
+
+| ->[((capacity * aYFP) * [P81])] yfp
+| yfp ->[(growth * [yfp])]
+| yfp ->{dYFP}
+
+| ->[((capacity * aCFP) * [P76])] cfp
+| cfp ->[(growth * [cfp])]
+| cfp ->{dCFP}
