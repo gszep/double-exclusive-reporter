@@ -22,11 +22,25 @@ yellow = {'red':   ((0.0, 1.00, 1.0),
                   (1.0, 0.00, 1.0))
         }
 
+cyanyellow = {
+        'red':   ((0.0, 0.28, 0.28),
+                  (1.0, 0.99, 1.0)),
+
+        'green': ((0.0, 1.0, 1.0),
+                  (1.0, 1.0, 1.0)),
+
+        'blue':  ((0.0, 1.0, 1.0),
+                  (1.0, 0.00, 1.0))
+        }
+
 cyan = LinearSegmentedColormap('cyan', cyan)
 register_cmap(cmap=cyan)
 
 yellow = LinearSegmentedColormap('yellow', yellow)
 register_cmap(cmap=yellow)
+
+cyanyellow = LinearSegmentedColormap('cyanyellow', cyanyellow)
+register_cmap(cmap=cyanyellow)
 
 
 class colors:

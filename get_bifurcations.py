@@ -71,21 +71,21 @@ def get_bifurcations(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,
     # calculation of steady states
     steady_state = model.get_steady_state(c_grid,clip=clip,logspace=True)
 
-    L = steady_state[:,:,model.nontrivials.index('cfp')]
-    T = steady_state[:,:,model.nontrivials.index('yfp')]
+    cfp = steady_state[:,:,model.nontrivials.index('cfp')]
+    yfp = steady_state[:,:,model.nontrivials.index('yfp')]
 
-    return c6,c12,L,T
+    return c6,c12,cfp,yfp
 
 
-def generate_figure(c6,c12,L,T,atc,iptg):
+def generate_figure(c6,c12,cfp,yfp,atc,iptg):
     '''main program figure display'''
 
     figure(figsize=(10,10))
     title('ATC = {} nM     IPTG = {} nM'.format(atc,iptg),fontsize=16,y=1.02)
 
-    contourf(c6,c12,log10(L),cmap='cyan',alpha=0.5)
-    contourf(c6,c12,log10(T),cmap='yellow',alpha=0.5)
-    contour(c6,c12,log10(T)-log10(L),levels=[0.0],colors=['k'],alpha=0.5)
+    contourf(c6,c12,cfp,cmap='cyan',alpha=0.5)
+    contourf(c6,c12,yfp,cmap='yellow',alpha=0.5)
+    contour(c6,c12,cfp-yfp,levels=[0.0],colors=['k'],alpha=0.5)
 
     xlabel(r'Diffusive Signal $C_{6}$ / nM',fontsize=16)
     ylabel(r'Diffusive Signal $C_{12}$ / nM',fontsize=16)
@@ -98,10 +98,10 @@ def main(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,iptg=0.0,cli
     '''parametrisation of main program'''
 
     print('Calculating steady states...')
-    c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,atc,iptg,clip,eps)
+    c6,c12,cfp,yfp = get_bifurcations(crn_path,N,c6_range,c12_range,atc,iptg,clip,eps)
     print('Done')
 
-    generate_figure(c6,c12,L,T,atc,iptg)
+    generate_figure(c6,c12,cfp,yfp,atc,iptg)
 
 
 # execute main program
