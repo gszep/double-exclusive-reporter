@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from crnpy.parser import fromcrn
 from get_bifurcations import get_bifurcations
 from crnpy.colors import cyan,yellow
@@ -6,7 +8,7 @@ from sys import stdout
 from argparse import ArgumentParser
 
 from numpy import linspace,logspace,meshgrid,vstack,dstack,inf,mean,ones,array,argmin,log10
-from matplotlib.pyplot import *
+from matplotlib.pyplot import figure,plot,legend,xscale,yscale,xlim,ylim,xlabel,ylabel,savefig,close
 
 from os import system
 from pickle import dump,load
@@ -83,7 +85,7 @@ def import_bifurcations(crn_path,N,c6_range,c12_range,clip,eps):
         with open('bifurcations','w') as file : # otherwise calculate
 
             print('Calculating steady states...')
-            c6,c12,L,T,atc,iptg = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
+            c6,c12,L,T = get_bifurcations(crn_path,N,c6_range,c12_range,clip,eps)
             print('Done')
 
             dump((c6,c12,L,T),file)
@@ -103,8 +105,8 @@ def generate_frame(j,model,space,L,T):
 
     # plot system state
     n,m = list(model._plots)
-    plot(model.space,getattr(model,n),color='darkcyan')
-    plot(model.space,getattr(model,m),color='gold')
+    plot(model.space,getattr(model,n.replace('self.','')),color='darkcyan')
+    plot(model.space,getattr(model,m.replace('self.','')),color='gold')
     plot(-1,-1,'k',label='Concentration at $t = {}h$'.format(model.time))
 
     legend(fontsize=16)
@@ -154,7 +156,7 @@ def main(crn_path,C6,C12,width,n_timepoints,N,c6_range,c12_range,clip,eps) :
                 j = generate_frame(j,model,space,Lattractor,Tattractor)
 
             i += 1
-        print '\n'
+        print('\n')
 
     finally : # create animation on exit
         create_animation(C6,C12)

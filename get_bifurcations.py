@@ -71,8 +71,8 @@ def get_bifurcations(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,
     # calculation of steady states
     steady_state = model.get_steady_state(c_grid,clip=clip,logspace=True)
 
-    cfp = steady_state[:,:,model.nontrivials.index('cfp')]
-    yfp = steady_state[:,:,model.nontrivials.index('yfp')]
+    cfp = steady_state[:,:,model.nontrivials.index('lacI')]
+    yfp = steady_state[:,:,model.nontrivials.index('tetR')]
 
     return c6,c12,cfp,yfp
 

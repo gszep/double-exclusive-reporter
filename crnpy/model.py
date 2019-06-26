@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from numpy import array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul,ndarray
 from numpy.random import uniform
 

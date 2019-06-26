@@ -1,5 +1,7 @@
+from __future__ import print_function
+
 from re import sub,search,finditer,findall
-from yaml import load
+from yaml import load,FullLoader
 from numpy import unique
 
 from .model import Model
@@ -127,7 +129,7 @@ def parse_directives(file_string,kwargs,ignore=['sweeps','inference','data','sim
 
         else : # attempt to parse automagically
             try :
-                kwargs[name.strip()] = load(directive)
+                kwargs[name.strip()] = load(directive,Loader=FullLoader)
 
             except : # parse manually
                 raise Exception('failed to parse directive {}'.format(name))
