@@ -61,17 +61,17 @@ directive parameters [
   yb0_exrep = 63.7192861188388, {interval=Real; distribution=Uniform(0,5000); variation=Random};
   cb0_exrep = 1973.19814884753, {interval=Real; distribution=Uniform(0,10000); variation=Random};
 ]
-directive inference {name=target; burnin=50000; samples=50000; thin=100; seed=15; noise_model=proportional}
+
 directive rates [
-P76 = (((e76 + (KGR_76 * [boundLuxR])) + (KGS_76 * [boundLasR])) / ((1 + (KGR_76 * [boundLuxR])) + (KGS_76 * [boundLasR])));
-P81 = (((e81 + (KGR_81 * [boundLuxR])) + (KGS_81 * [boundLasR])) / ((1 + (KGR_81 * [boundLuxR])) + (KGS_81 * [boundLasR])));
-PBad = (((Ara ^ nA) + (eA * (KAra ^ nA))) / ((Ara ^ nA) + (KAra ^ nA)));
-PLac = (1 / (1 + ([lacI] ^ nL)));
-PTet = (1 / (1 + ([tetR] ^ nT)));
-boundLasR = (([lasR] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
-boundLuxR = (([luxR] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
-capacity = rc;//(rc * (((1 - es) * [growth]) + es));
-growth = 1.0;//( r * (1 - ([x] / K)))
+  P76 = (((e76 + (KGR_76 * [boundLuxR])) + (KGS_76 * [boundLasR])) / ((1 + (KGR_76 * [boundLuxR])) + (KGS_76 * [boundLasR])));
+  P81 = (((e81 + (KGR_81 * [boundLuxR])) + (KGS_81 * [boundLasR])) / ((1 + (KGR_81 * [boundLuxR])) + (KGS_81 * [boundLasR])));
+  PBad = (((Ara ^ nA) + (eA * (KAra ^ nA))) / ((Ara ^ nA) + (KAra ^ nA)));
+  PLac = (1 / (1 + ([lacI] ^ nL)));
+  PTet = (1 / (1 + ([tetR] ^ nT)));
+  boundLasR = (([lasR] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
+  boundLuxR = (([luxR] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
+  capacity = rc;//(rc * (((1 - es) * [growth]) + es));
+  growth = 1.0;//( r * (1 - ([x] / K)))
 ]
 
 | init x 0.002

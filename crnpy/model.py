@@ -335,7 +335,7 @@ class Model(object) :
         # when the above return statement is rewritten as
         # return [ eval(nullcine) for nullcine in self._nullcines ]
 
-    def get_steady_state(self,c,clip=None,logspace=False) :
+    def get_steady_state(self,c,clip=None,logspace=False,interval=[-5,5]) :
         '''solves f(x,c)=0 for steady state concentration x,
         given input signal c, which can be a grid of values'''
 
@@ -350,7 +350,7 @@ class Model(object) :
             self._init[state] = value
 
         self._set_states(spatial=False)
-        steady_states = roots_parallel(self.nullcines, interval=[-5,5], args=args, nvar=self.n_nontrivials, logspace=logspace)
+        steady_states = roots_parallel(self.nullcines, interval=interval, args=args, nvar=self.n_nontrivials, logspace=logspace)
         self._set_states(spatial=hasattr(self,'_spatial'))
 
         # return original shaped array

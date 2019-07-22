@@ -15,9 +15,9 @@ def get_args() :
                         help='path to crn file')
     parser.add_argument('--N', type=int, default=50, metavar='gridpoints',
                         help='number of grid points per dimension to use')
-    parser.add_argument('--c6_range', nargs=2, type=float, default=[-0.5,5],
+    parser.add_argument('--c6_range', nargs=2, type=float, default=[1,3],
                         help='log10 input range for c6 such that 10**input is in nM',metavar=('min','max'))
-    parser.add_argument('--c12_range', nargs=2, type=float, default=[-0.5,5],
+    parser.add_argument('--c12_range', nargs=2, type=float, default=[1,3],
                         help='log10 input range for c12 such that 10**input is in nM',metavar=('min','max'))
     parser.add_argument('--atc', type=float, default=0.0,
                         help='level of atc in nM',metavar='value')
@@ -30,7 +30,7 @@ def get_args() :
     return vars(parser.parse_args())
 
 
-def get_bifurcations(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,iptg=0.0,clip=-0.5,eps=1e-3):
+def get_bifurcations(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,iptg=0.0,clip=-0.5,eps=1e-3,interval=[-5,5],logspc=True):
     '''Calculate bifrucation diagram for double exclusive reporter
     for a given range of diffusives c6 and c12.
 
@@ -69,12 +69,12 @@ def get_bifurcations(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,
     model.IPTG = iptg
 
     # calculation of steady states
-    steady_state = model.get_steady_state(c_grid,clip=clip,logspace=True)
+    steady_state = model.get_steady_state(c_grid,clip=clip,logspace=logspc,interval=interval)
 
-    cfp = steady_state[:,:,model.nontrivials.index('lacI')]
-    yfp = steady_state[:,:,model.nontrivials.index('tetR')]
+    cfp = steady_state[:,:,model.nontrivials.index('cfp')]
+    yfp = steady_state[:,:,model.nontrivials.index('yfp')]
 
-    return c6,c12,cfp,yfp
+    return c6,c12,cfp,yfp,steady_state
 
 
 def generate_figure(c6,c12,cfp,yfp,atc,iptg):
@@ -83,12 +83,12 @@ def generate_figure(c6,c12,cfp,yfp,atc,iptg):
     figure(figsize=(10,10))
     title('ATC = {} nM     IPTG = {} nM'.format(atc,iptg),fontsize=16,y=1.02)
 
-    contourf(c6,c12,cfp,cmap='cyan',alpha=0.5)
-    contourf(c6,c12,yfp,cmap='yellow',alpha=0.5)
-    contour(c6,c12,cfp-yfp,levels=[0.0],colors=['k'],alpha=0.5)
+    contourf(c12,c6,cfp,cmap='cyan',alpha=0.5)
+    contourf(c12,c6,yfp,cmap='yellow',alpha=0.5)
+    contour(c12,c6,cfp-yfp,levels=[0.0],colors=['k'],alpha=0.5)
 
-    xlabel(r'Diffusive Signal $C_{6}$ / nM',fontsize=16)
-    ylabel(r'Diffusive Signal $C_{12}$ / nM',fontsize=16)
+    xlabel(r'Diffusive Signal $C_{12}$ / nM',fontsize=16)
+    ylabel(r'Diffusive Signal $C_{6}$ / nM',fontsize=16)
 
     xscale('log'); yscale('log')
     show()
@@ -98,7 +98,7 @@ def main(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,iptg=0.0,cli
     '''parametrisation of main program'''
 
     print('Calculating steady states...')
-    c6,c12,cfp,yfp = get_bifurcations(crn_path,N,c6_range,c12_range,atc,iptg,clip,eps)
+    c6,c12,cfp,yfp,steady_state = get_bifurcations(crn_path,N,c6_range,c12_range,atc,iptg,clip,eps)
     print('Done')
 
     generate_figure(c6,c12,cfp,yfp,atc,iptg)
