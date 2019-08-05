@@ -1,5 +1,5 @@
 directive simulation { final=24; points=250; plots=[yfp;cfp]; }
-directive spatial { dimensions = 1; xmax = 0.016; dt = 0.001; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
+directive spatial { dimensions = 1; xmax = 0.016; dt = 0.007; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
 directive parameters [
 
   // growth parameters
@@ -56,6 +56,9 @@ directive rates [
   boundLasR = (([lasR] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
   boundLuxR = (([luxR] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
 ]
+
+| init c6 0
+| init c12 0
 
 | ->[(([capacity] * aR33) * [PTet])] luxR
 | luxR ->{dR}
