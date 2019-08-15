@@ -1,0 +1,3 @@
+[submodule "src/pydstool"]
+	path = src/pydstool
+	url = https://github.com/robclewley/pydstool.git
