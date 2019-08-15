@@ -16,7 +16,7 @@ def get_args() :
 	parser = ArgumentParser(description='creates bifrucation plot from crn file parameters')
 
 	parser.add_argument('crn_path', type=str, help='path to crn file')
-	parser.add_argument('--model', type=bool, default=False, help='model predictions')
+	parser.add_argument('--model', type=bool, default=True, help='model predictions')
 	parser.add_argument('--data_path', type=str, default='./data/liquid/char_ExRep_1_R33S175ExRepTet33AAVLac300ND.csv',help='liquid culture dataset')
 	return vars(parser.parse_args())
 
