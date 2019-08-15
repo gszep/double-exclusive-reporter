@@ -8,8 +8,8 @@ from models.doubleExclusive import system_specifications,parameters
 from pandas import read_csv
 from lib.colors import cyan,yellow
 
-from numpy import *
-from matplotlib.pyplot import *
+from numpy import meshgrid
+from matplotlib.pyplot import plot,figure,xlim,ylim,xlabel,ylabel,xscale,yscale,colorbar,pcolor,fill_between,show
 
 def get_args() :
 	'''parse arguments from command line'''
