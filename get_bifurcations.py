@@ -1,110 +1,78 @@
-from crnpy.parser import fromcrn
-from crnpy.colors import cyan,yellow
-
 from sys import argv
 from argparse import ArgumentParser
 
-from numpy import linspace,logspace,meshgrid,vstack,dstack,inf,mean,ones,array,log10
+from lib.model import Model
+from lib.parsers import crn_parameters
+from models.doubleExclusive import system_specifications,parameters
+
+from pandas import read_csv
+from lib.colors import cyan,yellow
+
+from numpy import *
 from matplotlib.pyplot import *
 
 def get_args() :
-    '''parse arguments from command line'''
-    parser = ArgumentParser(description='creates bifrucation plot from crn file parameters')
+	'''parse arguments from command line'''
+	parser = ArgumentParser(description='creates bifrucation plot from crn file parameters')
 
-    parser.add_argument('crn_path', type=str,
-                        help='path to crn file')
-    parser.add_argument('--N', type=int, default=50, metavar='gridpoints',
-                        help='number of grid points per dimension to use')
-    parser.add_argument('--c6_range', nargs=2, type=float, default=[1,3],
-                        help='log10 input range for c6 such that 10**input is in nM',metavar=('min','max'))
-    parser.add_argument('--c12_range', nargs=2, type=float, default=[1,3],
-                        help='log10 input range for c12 such that 10**input is in nM',metavar=('min','max'))
-    parser.add_argument('--atc', type=float, default=0.0,
-                        help='level of atc in nM',metavar='value')
-    parser.add_argument('--iptg', type=float, default=0.0,
-                        help='level of iptg in nM',metavar='value')
-    parser.add_argument('--clip', type=float,default=-0.5,metavar='value',
-                        help='threshold concentration 10**clip below which system is off')
-    parser.add_argument('--eps', type=float,default=1e-3,metavar='value',
-                        help='precision to use when computing roots')
-    return vars(parser.parse_args())
+	parser.add_argument('crn_path', type=str,
+						help='path to crn file')
+	return vars(parser.parse_args())
 
 
-def get_bifurcations(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,iptg=0.0,clip=-0.5,eps=1e-3,interval=[-5,5],logspc=True):
-    '''Calculate bifrucation diagram for double exclusive reporter
-    for a given range of diffusives c6 and c12.
+def get_bifurcations(crn_path,file='char_ExRep_1',device='R33S175ExRepTet33AAVLac300ND'):
+	'''Calculate bifrucation diagram for double exclusive reporter
+	for a given range of diffusives c6 and c12'''
 
-    ---parameters---
-    crn_path : <str>
-        path to crn file
-    N : <int>
-        number of grid points per dimension to use
+	parameters.update(crn_parameters(crn_path))
+	model = Model(pars = parameters , **system_specifications)
 
-    c6_range : [<float>,<float>]
-        log10 input range for c6 such that 10**input is in nM
-    c12_range : [<float>,<float>]
-        log10 input range for c12 such that 10**input is in nM
+	model.integrate()
+	model.get_cusp('c6','c12')
+	
+	liquid_data = read_csv('./data/liquid/{}_{}.csv'.format(file,device))
+	cfp,yfp = liquid_data.pivot('C6','C12','P(ECFP/mRFP1)'), liquid_data.pivot('C6','C12','P(EYFP/mRFP1)')
+	c12,c6 = meshgrid(cfp.columns.values,cfp.index.values)
 
-    atc : <float>
-        level of atc in nM
-    iptg : <float>
-        level of iptg in nM
-
-    clip : <float>
-        threshold concentration 10**clip below which system is off
-    eps : <float>
-        precision to use when computing roots
-    '''
-
-    # initialisation of model
-    model = fromcrn(crn_path)
-
-    c = logspace(*c6_range,num=N)
-    cdash = logspace(*c12_range,num=N)
-
-    c6,c12 = meshgrid(c,cdash,copy=False)
-    c_grid = dstack([c6,c12])
-
-    model.ATC = atc
-    model.IPTG = iptg
-
-    # calculation of steady states
-    steady_state = model.get_steady_state(c_grid,clip=clip,logspace=logspc,interval=interval)
-
-    cfp = steady_state[:,:,model.nontrivials.index('cfp')]
-    yfp = steady_state[:,:,model.nontrivials.index('yfp')]
-
-    return c6,c12,cfp,yfp,steady_state
+	return model,c6,c12,cfp,yfp
 
 
-def generate_figure(c6,c12,cfp,yfp,atc,iptg):
-    '''main program figure display'''
+def generate_figure(model,c6,c12,cfp,yfp):
+	'''main program figure display'''
 
-    figure(figsize=(10,10))
-    title('ATC = {} nM     IPTG = {} nM'.format(atc,iptg),fontsize=16,y=1.02)
+	figure(figsize=(9,7))
+	
+	pcolor(c12,c6,log10(cfp.values),cmap='cyan',vmin=1,vmax=2.1)
+	colorbar(pad=-0.1,ticks=[1,2,3]).ax.set_yticklabels(['$10^{1}$','$10^{2}$','$10^{3}$'])
+	
+	pcolor(c12,c6,log10(yfp.values),cmap='yellow',vmin=1,vmax=2.1)
+	colorbar(ticks=[]).ax.set_yticklabels([])
+	
+	region = model.bifurcations['LC1']
+	region_c6,region_c12 = region.curve[:-1,region.params].T
+	fill_between(10**region_c12,10**region_c6,facecolor="none",hatch="///", edgecolor="k",linewidth=0)
+	
+	yscale('log'); xscale('log')
+	xlim(0.04,2500); ylim(0.04,2500)
+	
+	plot(200,100,'kx',ms=10,mew=5)
+	plot(1e-1,100,'kx',ms=10,mew=5)
+	plot(200,1e-1,'kx',ms=10,mew=5)
+	plot(1e-1,1e-1,'kx',ms=10,mew=5)
+	
+	xlabel('Morphogen $C_{12}$ / nM',fontsize=16)
+	ylabel('Morphogen $C_{6}$ / nM',fontsize=16)
+	show()
 
-    contourf(c12,c6,cfp,cmap='cyan',alpha=0.5)
-    contourf(c12,c6,yfp,cmap='yellow',alpha=0.5)
-    contour(c12,c6,cfp-yfp,levels=[0.0],colors=['k'],alpha=0.5)
 
-    xlabel(r'Diffusive Signal $C_{12}$ / nM',fontsize=16)
-    ylabel(r'Diffusive Signal $C_{6}$ / nM',fontsize=16)
+def main(crn_path) :
+	'''parametrisation of main program'''
 
-    xscale('log'); yscale('log')
-    show()
-
-
-def main(crn_path,N=50,c6_range=[-0.5,5],c12_range=[-0.5,5],atc=0.0,iptg=0.0,clip=-0.5,eps=1e-3) :
-    '''parametrisation of main program'''
-
-    print('Calculating steady states...')
-    c6,c12,cfp,yfp,steady_state = get_bifurcations(crn_path,N,c6_range,c12_range,atc,iptg,clip,eps)
-    print('Done')
-
-    generate_figure(c6,c12,cfp,yfp,atc,iptg)
+	model,c6,c12,cfp,yfp = get_bifurcations(crn_path)
+	generate_figure(model,c6,c12,cfp,yfp)
 
 
 # execute main program
 if __name__ == '__main__' :
-    args = get_args()
-    main(**args)
+	args = get_args()
+	main(**args)
