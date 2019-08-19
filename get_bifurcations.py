@@ -57,7 +57,7 @@ def generate_figure(model,c6,c12,cfp,yfp):
 		fill_between(10**region_c12,10**region_c6,facecolor="none",hatch="///", edgecolor="k",linewidth=0)
 	
 	yscale('log'); xscale('log')
-	xlim(0.04,2500); ylim(0.04,2500)
+	xlim(0.04,25000); ylim(0.04,25000)
 	
 	plot(200,100,'kx',ms=10,mew=5)
 	plot(1e-1,100,'kx',ms=10,mew=5)

@@ -3,8 +3,8 @@ directive spatial { dimensions = 1; xmax = 0.016; dt = 0.007; nx = 101; diffusib
 directive parameters [
 
   // growth parameters
-  capacity = 1.2;
-  growth = 0.0408;
+  capacity = 1;
+  growth = 1;
   K = 2.7609;
 
   // signal affinity and crosstalk
