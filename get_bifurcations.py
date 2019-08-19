@@ -45,25 +45,56 @@ def generate_figure(model,c6,c12,cfp,yfp):
 
 	figure(figsize=(9,7))
 	
-	pcolor(c12,c6,log10(cfp.values),cmap='cyan',vmin=1,vmax=2.1)
-	colorbar(pad=-0.1,ticks=[1,2,3]).ax.set_yticklabels(['$10^{1}$','$10^{2}$','$10^{3}$'])
-	
-	pcolor(c12,c6,log10(yfp.values),cmap='yellow',vmin=1,vmax=2.1)
-	colorbar(ticks=[]).ax.set_yticklabels([])
-	
 	if model :
 		region = model.bifurcations['LC1']
 		region_c6,region_c12 = region.curve[:-1,region.params].T
 		fill_between(10**region_c12,10**region_c6,facecolor="none",hatch="///", edgecolor="k",linewidth=0)
 	
 	yscale('log'); xscale('log')
-	xlim(0.04,2500); ylim(0.04,2500)
+	xlim(0.04,25000); ylim(0.04,25000)
 	
 	plot(200,100,'kx',ms=10,mew=5)
 	plot(1e-1,100,'kx',ms=10,mew=5)
 	plot(200,1e-1,'kx',ms=10,mew=5)
 	plot(1e-1,1e-1,'kx',ms=10,mew=5)
+
+	plot(25000,8333,'bx',ms=10,mew=5)
+	plot(25000,2777,'kx',ms=10,mew=5)
+	plot(25000,926,'kx',ms=10,mew=5)
+	plot(25000,309,'x',color='orange',ms=10,mew=5)
+
+	plot(5000,2777,'bx',ms=10,mew=5)
+	plot(5000,926,'kx',ms=10,mew=5)
+	plot(5000,308,'kx',ms=10,mew=5)
+	plot(5000,102,'kx',ms=10,mew=5)
+	plot(5000,34,'x',color='orange',ms=10,mew=5)
+
+	plot(1000,926,'bx',ms=10,mew=5)
+	plot(1000,308,'kx',ms=10,mew=5)
+	plot(1000,102,'kx',ms=10,mew=5)
+	plot(1000,34,'kx',ms=10,mew=5)
+	plot(1000,11,'x',color='orange',ms=10,mew=5)
+
+	plot(200,308,'bx',ms=10,mew=5)
+	plot(200,102,'kx',ms=10,mew=5)
+	plot(200,34,'kx',ms=10,mew=5)
+	plot(200,11,'x',color='orange',ms=10,mew=5)
+
+	plot(40,102,'bx',ms=10,mew=5)
+	plot(40,34,'kx',ms=10,mew=5)
+	plot(40,11,'kx',ms=10,mew=5)
+	plot(40,3.8,'x',color='orange',ms=10,mew=5)
+
+	plot(8,34,'bx',ms=10,mew=5)
+	plot(8,11,'x',color='orange',ms=10,mew=5)
+
+	mask = log10(cfp.values).flatten() > log10(yfp.values).flatten()
+
+	plot(c12.flatten()[mask],c6.flatten()[mask],'o',color='darkcyan')
+	# colorbar(pad=-0.1,ticks=[1,2,3]).ax.set_yticklabels(['$10^{1}$','$10^{2}$','$10^{3}$'])
 	
+	plot(c12.flatten()[~mask],c6.flatten()[~mask],'o',color='gold')
+
 	xlabel('Morphogen $C_{12}$ / nM',fontsize=16)
 	ylabel('Morphogen $C_{6}$ / nM',fontsize=16)
 	show()

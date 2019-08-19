@@ -4,8 +4,8 @@ from re import sub,search,finditer,findall
 from yaml import load,FullLoader
 from numpy import unique
 
-from colors import colors
-from utils import isnumber
+from .colors import colors
+from .utils import isnumber
 
 
 def crn_parameters(file_path) :
