@@ -10,7 +10,7 @@ from pandas import read_csv
 from lib.colors import cyan,yellow
 
 from numpy import meshgrid,log10
-from matplotlib.pyplot import plot,figure,xlim,ylim,xlabel,ylabel,xscale,yscale,colorbar,pcolor,fill_between,show
+from matplotlib.pyplot import plot,scatter,figure,xlim,ylim,xlabel,ylabel,xscale,yscale,colorbar,pcolor,fill_between,show,legend
 
 def get_args() :
 	'''parse arguments from command line'''
@@ -45,59 +45,68 @@ def generate_figure(model,c6,c12,cfp,yfp):
 	'''main program figure display'''
 
 	figure(figsize=(9,7))
+
+	c12shift,c6shift = 2*cfp.columns.values, 2*cfp.index.values
+	pcolor(c12+c12shift,c6+c6shift[:,None],log10(cfp.values),cmap='cyan',vmin=1,vmax=2.1)
+	colorbar(pad=-0.1,ticks=[1,2,3]).ax.set_yticklabels(['$10^{1}$','$10^{2}$','$10^{3}$'])
+	
+	pcolor(c12+c12shift,c6+c6shift[:,None],log10(yfp.values),cmap='yellow',vmin=1,vmax=2.1)
+	colorbar(ticks=[]).ax.set_yticklabels([])
 	
 	if model :
 		region = model.bifurcations['LC1']
 		region_c6,region_c12 = region.curve[:-1,region.params].T
-		fill_between(10**region_c12,10**region_c6,facecolor="none",hatch="///", edgecolor="k",linewidth=0)
+		fill_between(10**region_c12,10**region_c6,facecolor='white',hatch='///', edgecolor='k',linewidth=0)
 	
+	# flow cytometry points
+	scatter(1e-1,100,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
+	scatter(1e-1,1e-1,s=200,facecolor='white',marker='s',edgecolors='k')
+	scatter(200,1e-1,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
+
+	scatter(25000,8333,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
+	scatter(25000,2777,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(25000,926,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(25000,309,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
+
+	scatter(5000,2777,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
+	scatter(5000,926,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(5000,308,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(5000,102,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(5000,34,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
+
+	scatter(1000,926,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
+	scatter(1000,308,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(1000,102,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(1000,34,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(1000,11,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
+
+	scatter(200,308,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
+	scatter(200,100,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(200,34,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(200,11,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
+
+	scatter(40,102,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
+	scatter(40,34,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(40,11,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	scatter(40,3.8,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
+
+	scatter(8,34,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
+	scatter(8,11,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
+
+	# mask = log10(cfp.values).flatten() > log10(yfp.values).flatten()
+	# plot(c12.flatten()[mask],c6.flatten()[mask],'o',color='darkcyan')	
+	# plot(c12.flatten()[~mask],c6.flatten()[~mask],'o',color='gold')
+
 	yscale('log'); xscale('log')
-	xlim(0.04,25000); ylim(0.04,25000)
-	
-	plot(200,100,'kx',ms=10,mew=5)
-	plot(1e-1,100,'kx',ms=10,mew=5)
-	plot(200,1e-1,'kx',ms=10,mew=5)
-	plot(1e-1,1e-1,'kx',ms=10,mew=5)
-
-	plot(25000,8333,'bx',ms=10,mew=5)
-	plot(25000,2777,'kx',ms=10,mew=5)
-	plot(25000,926,'kx',ms=10,mew=5)
-	plot(25000,309,'x',color='orange',ms=10,mew=5)
-
-	plot(5000,2777,'bx',ms=10,mew=5)
-	plot(5000,926,'kx',ms=10,mew=5)
-	plot(5000,308,'kx',ms=10,mew=5)
-	plot(5000,102,'kx',ms=10,mew=5)
-	plot(5000,34,'x',color='orange',ms=10,mew=5)
-
-	plot(1000,926,'bx',ms=10,mew=5)
-	plot(1000,308,'kx',ms=10,mew=5)
-	plot(1000,102,'kx',ms=10,mew=5)
-	plot(1000,34,'kx',ms=10,mew=5)
-	plot(1000,11,'x',color='orange',ms=10,mew=5)
-
-	plot(200,308,'bx',ms=10,mew=5)
-	plot(200,102,'kx',ms=10,mew=5)
-	plot(200,34,'kx',ms=10,mew=5)
-	plot(200,11,'x',color='orange',ms=10,mew=5)
-
-	plot(40,102,'bx',ms=10,mew=5)
-	plot(40,34,'kx',ms=10,mew=5)
-	plot(40,11,'kx',ms=10,mew=5)
-	plot(40,3.8,'x',color='orange',ms=10,mew=5)
-
-	plot(8,34,'bx',ms=10,mew=5)
-	plot(8,11,'x',color='orange',ms=10,mew=5)
-
-	mask = log10(cfp.values).flatten() > log10(yfp.values).flatten()
-
-	plot(c12.flatten()[mask],c6.flatten()[mask],'o',color='darkcyan')
-	# colorbar(pad=-0.1,ticks=[1,2,3]).ax.set_yticklabels(['$10^{1}$','$10^{2}$','$10^{3}$'])
-	
-	plot(c12.flatten()[~mask],c6.flatten()[~mask],'o',color='gold')
+	xlim(0.04,75000); ylim(0.04,75000)
 
 	xlabel('Morphogen $C_{12}$ / nM',fontsize=16)
 	ylabel('Morphogen $C_{6}$ / nM',fontsize=16)
+
+	scatter(None,None,s=200,facecolor='None',marker='s',edgecolors='k',label='flow cytometry')
+	plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=0,markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='plate reader')
+	scatter(None,None,s=200,facecolor='white',marker='s',edgecolors='k',hatch='///',label='model')
+	legend(fontsize=16,loc=2)
 	show()
 
 

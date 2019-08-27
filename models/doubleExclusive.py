@@ -3,7 +3,7 @@ system_specifications = {
 
 	# temporal and parameter domains
 	'tdomain' : [0,48],
-	'pdomain' : { 'c12': [-1.39,4.39], 'c6': [-1.39,4.39] },
+	'pdomain' : { 'c12': [-1.39,4.88], 'c6': [-1.39,4.88] },
 
 	# rate functions
 	'varspecs' : {
@@ -72,5 +72,5 @@ parameters = {
 	'IPTG' : 0.0,
 	
 	# morphogens
-	'c12': 4.39, 'c6' : -1.39
+	'c12': 4.88, 'c6' : -1.39
 }
