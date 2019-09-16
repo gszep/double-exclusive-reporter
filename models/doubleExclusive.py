@@ -27,8 +27,8 @@ system_specifications = {
 parameters = {
 
 	# growth parameters
-	'capacity' : 1.2,
-	'growth' : 0.0408,
+	'capacity' : 1.0,
+	'growth' : 1.0,
 	'K' : 2.7609,
 
 	# signal affinity and crosstalk
