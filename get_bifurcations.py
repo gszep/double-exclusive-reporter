@@ -64,8 +64,8 @@ def generate_figure(model,c6,c12,cfp,yfp):
 	scatter(200,1e-1,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
 
 	scatter(25000,8333,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
-	scatter(25000,2777,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
-	scatter(25000,926,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	plot(25000,2777,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
+	plot(25000,926,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
 	scatter(25000,309,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
 
 	scatter(5000,2777,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
@@ -103,9 +103,9 @@ def generate_figure(model,c6,c12,cfp,yfp):
 	xlabel('Morphogen $C_{12}$ / nM',fontsize=16)
 	ylabel('Morphogen $C_{6}$ / nM',fontsize=16)
 
-	scatter(None,None,s=200,facecolor='None',marker='s',edgecolors='k',label='flow cytometry')
+	plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='flow cytometry')
 	plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=0,markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='plate reader')
-	scatter(None,None,s=200,facecolor='white',marker='s',edgecolors='k',hatch='///',label='model')
+	scatter(None,None,s=200,facecolor='white',marker='s',edgecolors='none',hatch='///',label='model')
 	legend(fontsize=16,loc=2)
 	show()
 
