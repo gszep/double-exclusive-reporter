@@ -42,7 +42,7 @@ directive parameters [
   iA = 0.146707944645707, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
   iI = 129.229930836576, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
   ATC = 0.0;
-  IPTG = 0.05;
+  IPTG = 0.0;
 ]
 
 directive rates [
