@@ -1,11 +1,8 @@
-directive simulation { final=24; points=250; plots=[yfp;cfp]; }
-directive spatial { dimensions = 1; xmax = 0.016; dt = 0.007; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
 directive parameters [
 
   // growth parameters
   capacity = 1;
   growth = 1;
-  K = 2.7609;
 
   // signal affinity and crosstalk
   KGR_76 = 8.74464935835812, {interval=Log; distribution=TruncatedNormal(10.3061,0.365907092032937,0.0001,1000); variation=Random};
@@ -45,7 +42,7 @@ directive parameters [
   iA = 0.146707944645707, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
   iI = 129.229930836576, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
   ATC = 0.0;
-  IPTG = 0.010;
+  IPTG = 0.0;
 ]
 
 directive rates [

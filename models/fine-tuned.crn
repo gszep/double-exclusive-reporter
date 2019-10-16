@@ -1,0 +1,124 @@
+directive parameters [
+
+  // growth parameters
+  capacity = 1;
+  growth = 1;
+
+  // signal affinity and crosstalk
+  KGR_76 = 5.59800381960833, {interval=Log; distribution=TruncatedNormal(10.3061,0.365907092032937,0.0001,1000); variation=Random};
+  KGS_76 = 0.000760556267603818, {interval=Log; distribution=TruncatedNormal(0.476164,0.0266825973248483,0.0001,1000); variation=Random};
+  KGR_81 = 0.0136695307116689, {interval=Log; distribution=TruncatedNormal(0.00340134,0.00146176605515383,0.0001,1000); variation=Random};
+  KGS_81 = 0.655323523553734, {interval=Log; distribution=TruncatedNormal(1.14097,0.489658043944956,0.0001,1000); variation=Random};
+  KR6 = 0.000255348044631999, {interval=Log; distribution=TruncatedNormal(0.000161816,1.33382907450693E-05,1E-08,1); variation=Random};
+  KS6 = 4.38670222677884E-06, {interval=Log; distribution=TruncatedNormal(5.44913E-07,4.95265585317615E-07,1E-08,1); variation=Random};
+  KR12 = 1.00311946734043E-08, {interval=Log; distribution=TruncatedNormal(1.99238E-07,1.9003946958461E-08,1E-08,1); variation=Random};
+  KS12 = 0.00993128322942664, {interval=Log; distribution=TruncatedNormal(0.025676,0.00106033013726858,1E-08,1); variation=Random};
+  
+  // hill coefficients
+  nR = 0.698195896113791, {interval=Real; distribution=TruncatedNormal(0.813469,0.00951143522293034,0.5,2); variation=Random};
+  nS = 0.668494914149432, {interval=Real; distribution=TruncatedNormal(1.61994,0.040193531817943,0.5,2); variation=Random};
+  nL = 0.716323099711694, {interval=Real; distribution=Uniform(0.5,5); variation=Random};
+  nT = 2.06287283047466, {interval=Real; distribution=Uniform(0.5,5); variation=Random};
+
+  // activations
+  aR33 = 5.40372758022936, {interval=Log; distribution=TruncatedNormal(9.13793,0.25319458919969,1,100); variation=Random};
+  aS175 = 2.85851725018235, {interval=Log; distribution=TruncatedNormal(2.59566,0.0305122434442307,1,100); variation=Random};
+  aL = 432.57670293607, {interval=Log; distribution=Uniform(1,10000); variation=Random};
+  aT = 609.554220867104, {interval=Log; distribution=Uniform(1,10000); variation=Random};
+
+  e76 = 0.00625374153303748, {interval=Log; distribution=TruncatedNormal(0.0310181,0.000512734824251289,0.0001,1); variation=Random};
+  e81 = 0.000101333442611238, {interval=Log; distribution=TruncatedNormal(0.00144038,0.000615871739893949,0.0001,1); variation=Random};
+  aYFP = 337457.179529546, {interval=Log; distribution=TruncatedNormal(735091,1090729.11394168,1000,10000000); variation=Random};
+  aCFP = 33865.0507764259, {interval=Log; distribution=TruncatedNormal(43862.3,516.012596745467,1000,10000000); variation=Random};
+
+  // degredations
+  dR = 9.99057554103193, {interval=Log; distribution=TruncatedNormal(9.99195,0.00797687908896706,0.01,10); variation=Random};
+  dYFP = 0.150605054651385, {interval=Log; distribution=TruncatedNormal(0.137733,0.00116547415243754,0.001,1); variation=Random};
+  dCFP = 0.444873010390183, {interval=Log; distribution=TruncatedNormal(0.449436,0.00383930983381128,0.001,1); variation=Random};
+  dL = 0.53176136408327, {interval=Log; distribution=Uniform(0.001,10); variation=Random};
+  dT = 0.538885004257123, {interval=Log; distribution=Uniform(0.001,10); variation=Random};
+
+  // derepressors
+  iA = 0.282231573194239, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
+  iI = 841.021570241517, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
+  ATC = 0.5;
+  IPTG = 0.00;
+]
+
+directive rates [
+  P761 = (((e76 + (KGR_76 * [boundLuxR1])) + (KGS_76 * [boundLasR1])) / ((1 + (KGR_76 * [boundLuxR1])) + (KGS_76 * [boundLasR1])));
+  P762 = (((e76 + (KGR_76 * [boundLuxR2])) + (KGS_76 * [boundLasR2])) / ((1 + (KGR_76 * [boundLuxR2])) + (KGS_76 * [boundLasR2])));
+  P811 = (((e81 + (KGR_81 * [boundLuxR1])) + (KGS_81 * [boundLasR1])) / ((1 + (KGR_81 * [boundLuxR1])) + (KGS_81 * [boundLasR1])));
+  P812 = (((e81 + (KGR_81 * [boundLuxR2])) + (KGS_81 * [boundLasR2])) / ((1 + (KGR_81 * [boundLuxR2])) + (KGS_81 * [boundLasR2])));
+  PLac1 = (1 / (1 + ([lacI1] ^ nL)));
+  PLac2 = (1 / (1 + ([lacI2] ^ nL)));
+  PTet1 = (1 / (1 + ([tetR1] ^ nT)));
+  PTet2 = (1 / (1 + ([tetR2] ^ nT)));
+  boundLasR1 = (([lasR1] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
+  boundLasR2 = (([lasR2] ^ 2) * ((((KS6 * [c6]) ^ nS) + ((KS12 * [c12]) ^ nS)) / (((1 + (KS6 * [c6])) + (KS12 * [c12])) ^ nS)));
+  boundLuxR1 = (([luxR1] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
+  boundLuxR2 = (([luxR2] ^ 2) * ((((KR6 * [c6]) ^ nR) + ((KR12 * [c12]) ^ nR)) / (((1 + (KR6 * [c6])) + (KR12 * [c12])) ^ nR)));
+  capacity = rc;
+  growth = (([grow] * r) * (1 - (([x1] + [x2]) / K)));
+  x = ([x1] + [x2])
+]
+
+| init c6 0
+| init c12 0
+
+| lacI0 lacI1
+| luxR0 luxR1
+| (frac * c0) x1
+| tetR0 tetR2
+| lasR0 lasR2
+| ((1 - frac) * c0) x2
+| ->[([growth] * [x1])] x1
+| ->[(([capacity] * aR33) * [PTet1])] luxR1
+| luxR1 ->{dR}
+| luxR1 ->[([growth] * [luxR1])]
+| ->[(([capacity] * aS175) * [PLac1])] lasR1
+| lasR1 ->{dR}
+| lasR1 ->[([growth] * [lasR1])]
+| ->[(([capacity] * aT) * [P811])] tetR1
+| tetR1 ->{dT}
+| tetR1 ->[([growth] * [tetR1])]
+| tetR1 ->{(iA * ATC)}
+| ->[(([capacity] * aL) * [P761])] lacI1
+| lacI1 ->[([growth] * [lacI1])]
+| lacI1 ->{dL}
+| lacI1 ->{(iI * IPTG)}
+| ->[(([capacity] * aYFP) * [P811])] yfp1
+| ->[(([capacity] * aCFP) * [P761])] cfp1
+| yfp1 ->{dYFP}
+| yfp1 ->[([growth] * [yfp1])]
+| cfp1 ->{dCFP}
+| cfp1 ->[([growth] * [cfp1])]
+| ->[([growth] * [x2])] x2
+| ->[([capacity] * autoYFP)] f500
+| f500 ->[([growth] * [f500])]
+| ->[([capacity] * autoCFP)] f430
+| f430 ->[([growth] * [f430])]
+| ->[(([capacity] * aR33) * [PTet2])] luxR2
+| luxR2 ->{dR}
+| luxR2 ->[([growth] * [luxR2])]
+| ->[(([capacity] * aS175) * [PLac2])] lasR2
+| lasR2 ->{dR}
+| lasR2 ->[([growth] * [lasR2])]
+| ->[(([capacity] * aT) * [P812])] tetR2
+| tetR2 ->{dT}
+| tetR2 ->[([growth] * [tetR2])]
+| tetR2 ->{(iA * ATC)}
+| ->[(([capacity] * aL) * [P762])] lacI2
+| lacI2 ->[([growth] * [lacI2])]
+| lacI2 ->{dL}
+| lacI2 ->{(iI * IPTG)}
+| ->[(([capacity] * aYFP) * [P812])] yfp2
+| ->[(([capacity] * aCFP) * [P762])] cfp2
+| yfp2 ->{dYFP}
+| yfp2 ->[([growth] * [yfp2])]
+| cfp2 ->{dCFP}
+| cfp2 ->[([growth] * [cfp2])]
+| ->[([capacity] * autoYFP)] f500
+| f500 ->[([growth] * [f500])]
+| ->[([capacity] * autoCFP)] f430
+| f430 ->[([growth] * [f430])]
