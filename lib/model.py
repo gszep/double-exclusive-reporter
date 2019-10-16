@@ -17,8 +17,14 @@ class Model(object) :
 		print('finding initial fixed points...')
 
 		self.odes = Vode_ODEsystem(self.system)
-		self.system.ics = find_fixedpoints(self.odes, n=3, eps=1e-8)[0]
-		self.system.ttype = int
+		steady_state = find_fixedpoints(self.odes, n=3, eps=1e-8)
+		if len(steady_state) > 0 :
+
+			self.system.ics = find_fixedpoints(self.odes, n=3, eps=1e-8)[0]
+			self.system.ttype = int
+		
+		else :
+			raise Exception("cannot find initial fixed points")
 
 
 	def get_cusp(self,*params) :
