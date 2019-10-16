@@ -41,8 +41,8 @@ directive parameters [
   // derepressors
   iA = 0.282231573194239, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
   iI = 841.021570241517, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
-  ATC = 0;
-  IPTG = 0.007;
+  ATC = 0.5;
+  IPTG = 0.001;
 ]
 
 directive rates [
