@@ -32,7 +32,6 @@ def get_bifurcations(crn_path,model,data_path):
 		model = Model(pars = parameters , **system_specifications)
 
 		model.integrate()
-		#model.get_cusp('c12','c6')
 		model.get_cusp('c6','c12')
 	
 	liquid_data = read_csv(data_path)
@@ -57,7 +56,7 @@ def generate_figure(model,c6,c12,cfp,yfp):
 	if model :
 		region = model.bifurcations['LC1']
 		region_c6,region_c12 = region.curve[:-1,region.params].T
-		plot(10**region_c12,10**region_c6,color='white',linewidth=3)
+		fill_between(10**region_c12,10**region_c6,facecolor='white',hatch='///', edgecolor='k',linewidth=0)
 	
 	# flow cytometry points
 	scatter(1e-1,100,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
@@ -70,33 +69,29 @@ def generate_figure(model,c6,c12,cfp,yfp):
 	scatter(25000,309,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
 
 	scatter(5000,2777,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
-	scatter(5000,926,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
-	scatter(5000,308,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
-	scatter(5000,102,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	plot(5000,926,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
+	plot(5000,308,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
+	plot(5000,102,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
 	scatter(5000,34,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
 
 	scatter(1000,926,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
-	scatter(1000,308,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
-	scatter(1000,102,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
-	scatter(1000,34,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	plot(1000,308,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
+	plot(1000,102,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
+	plot(1000,34,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
 	scatter(1000,11,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
 
 	scatter(200,308,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
-	scatter(200,100,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
-	scatter(200,34,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	plot(200,100,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
+	plot(200,34,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
 	scatter(200,11,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
 
 	scatter(40,102,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
-	scatter(40,34,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
-	scatter(40,11,s=200,facecolor='none',marker='s',hatch='///',edgecolors='k')
+	plot(40,34,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
+	plot(40,11,linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0')
 	scatter(40,3.8,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
 
 	scatter(8,34,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
 	scatter(8,11,s=200,facecolor='#ffc000',marker='s',edgecolors='k')
-
-	# mask = log10(cfp.values).flatten() > log10(yfp.values).flatten()
-	# plot(c12.flatten()[mask],c6.flatten()[mask],'o',color='darkcyan')	
-	# plot(c12.flatten()[~mask],c6.flatten()[~mask],'o',color='gold')
 
 	yscale('log'); xscale('log')
 	xlim(0.04,75000); ylim(0.04,75000)
@@ -106,7 +101,7 @@ def generate_figure(model,c6,c12,cfp,yfp):
 
 	plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='flow cytometry')
 	plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=0,markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='plate reader')
-	scatter(None,None,s=200,facecolor='white',marker='s',edgecolors='none',hatch='///',label='model')
+	scatter(None,None,s=200,facecolor='white',marker='s',edgecolors='none',hatch='///',label='bistable prediction')
 	legend(fontsize=16,loc=2)
 	show()
 
