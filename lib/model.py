@@ -20,7 +20,7 @@ class Model(object) :
 		steady_state = find_fixedpoints(self.odes, n=3, eps=1e-8)
 		if len(steady_state) > 0 :
 
-			self.system.ics = find_fixedpoints(self.odes, n=3, eps=1e-8)[0]
+			self.system.ics = steady_state[0]
 			self.system.ttype = int
 		
 		else :
