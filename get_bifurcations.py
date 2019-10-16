@@ -32,8 +32,9 @@ def get_bifurcations(crn_path,model,data_path):
 		model = Model(pars = parameters , **system_specifications)
 
 		model.integrate()
-		model.get_cusp('c6','c12')
-	
+		try : model.get_cusp('c6','c12')
+		except : model.get_cusp('c12','c6')
+
 	liquid_data = read_csv(data_path)
 	cfp,yfp = liquid_data.pivot('C6','C12','P(ECFP/mRFP1)'), liquid_data.pivot('C6','C12','P(EYFP/mRFP1)')
 	c12,c6 = meshgrid(cfp.columns.values,cfp.index.values)

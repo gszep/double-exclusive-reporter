@@ -1,6 +1,7 @@
 from __future__ import print_function
 from PyDSTool import Vode_ODEsystem,args,ContClass,Generator
 from numpy import zeros
+from matplotlib.pyplot import *
 
 class Model(object) :
 
@@ -20,6 +21,11 @@ class Model(object) :
 		trajectory = self.odes.compute('trajectory')
 		trajectory = trajectory.sample()
 
+		figure(figsize=(6,6))
+		title('stability check', y=1.02, fontsize=16)
+		plot(trajectory); xlabel('iteration, i',fontsize=16); ylabel('state values',fontsize=16)
+		show()
+
 		steady_state = trajectory.coordarray[:,-1]
 		steady_state = dict(zip(self.state_keys,steady_state))
 		self.system.ics = steady_state
@@ -34,7 +40,8 @@ class Model(object) :
 		print('finding limit point...')
 		self.bifurcations.newCurve(args(
 			freepars = [list(params)[0]], name='EQ1', type='EP-C', MaxNumPoints = 100,
-			LocBifPoints='LP', StepSize = 0.1, MaxStepSize=0.1, StopAtPoints = ['B','LP'] ))
+			LocBifPoints='LP', StepSize = 0.1, MaxStepSize=0.1, StopAtPoints = ['B','LP'],
+			TestTol=0.1 ))
 		
 		print(' - forwards')
 		self.bifurcations['EQ1'].forward()

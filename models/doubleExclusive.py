@@ -2,7 +2,7 @@
 system_specifications = {
 
 	# temporal and parameter domains
-	'tdomain' : [0,48],
+	'tdomain' : [0,12],
 	'pdomain' : { 'c12': [-1.39,4.88], 'c6': [-1.39,4.88] },
 
 	# rate functions
@@ -29,7 +29,6 @@ parameters = {
 	# growth parameters
 	'capacity' : 1.0,
 	'growth' : 1.0,
-	'K' : 2.7609,
 
 	# signal affinity and crosstalk
 	'KGR_76' : 8.74464935835812, 
@@ -72,5 +71,5 @@ parameters = {
 	'IPTG' : 0.0,
 	
 	# morphogens
-	'c12': 4.88, 'c6' : -1.39
+	'c12': 4.88, 'c6' : 4.88
 }
