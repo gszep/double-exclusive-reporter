@@ -1,16 +1,10 @@
-t_final = 48.0
+include("FoldCurve.jl")
+
 n_components = 4
-
-theta = @lens _.c6
-theta_range = (-1.39,4.88)
-
-phi = @lens _.c12
-phi_range = (-1.39,4.88)
-
 parameters = (
 
     capacity = 1.2,
-    growth = 1,
+    growth = 1.0,
     K = 2.7609,
 
     # signal affinity and crosstalk
@@ -58,22 +52,35 @@ parameters = (
 )
 
 
-""" right-hand-sde of system of odes """
-function rates( u, p, t )
+function rates( u, p )
 
     # unpacking parameters / variables
     capacity,growth,K,KGR_76,KGS_76,KGR_81,KGS_81,KR6,KS6,KR12,KS12,nR,nS,nL,nT,aR33,aS175,aL,aT,e76,e81,aYFP,aCFP,dR,dYFP,dCFP,dL,dT,iA,iI,ATC,IPTG,c12,c6 = p
 	luxR,lasR,lacI,tetR = u
+	f = similar(u)
 
-	# rate functions
-	dluxR = ( capacity*aR33*PTet(10^tetR,nT) - 10^luxR*(growth+dR) )/(log(10)*10^luxR)
-	dlasR = ( capacity*aS175*PLac(10^lacI,nL) - 10^lasR*(growth+dR) )/(log(10)*10^lasR)
-	dlacI = ( capacity*aL*P76(10^luxR,10^lasR,c6,c12,nR,KR6,KR12,nS,KS6,KS12,e76,KGR_76,KGS_76) - 10^lacI*(growth+dL+iI*IPTG) )/(log(10)*10^lacI)
-	dtetR = ( capacity*aT*P81(10^luxR,10^lasR,c6,c12,nR,KR6,KR12,nS,KS6,KS12,e81,KGR_81,KGS_81) - 10^tetR*(growth+dT+iA*ATC) )/(log(10)*10^tetR)
+	f[1] = ( capacity*aR33*PTet(10^tetR,nT) - 10^luxR*(growth+dR) )/(log(10)*10^luxR)
+	f[2] = ( capacity*aS175*PLac(10^lacI,nL) - 10^lasR*(growth+dR) )/(log(10)*10^lasR)
+	f[3] = ( capacity*aL*P76(10^luxR,10^lasR,c6,c12,nR,KR6,KR12,nS,KS6,KS12,e76,KGR_76,KGS_76) - 10^lacI*(growth+dL+iI*IPTG) )/(log(10)*10^lacI)
+	f[4] = ( capacity*aT*P81(10^luxR,10^lasR,c6,c12,nR,KR6,KR12,nS,KS6,KS12,e81,KGR_81,KGS_81) - 10^tetR*(growth+dT+iA*ATC) )/(log(10)*10^tetR)
 
-    return [dluxR,dlasR,dlacI,dtetR]
+    return f
 end
 
+function Jacobian( u ,p )
+
+    # unpacking parameters / variables
+    capacity,growth,K,KGR_76,KGS_76,KGR_81,KGS_81,KR6,KS6,KR12,KS12,nR,nS,nL,nT,aR33,aS175,aL,aT,e76,e81,aYFP,aCFP,dR,dYFP,dCFP,dL,dT,iA,iI,ATC,IPTG,c12,c6 = p
+	luxR,lasR,lacI,tetR = u
+	J = zeros( length(u),  length(u))
+
+	J[1,1] = ( capacity*aR33*PTet(10^tetR,nT) - 10^luxR*(growth+dR) )/(log(10)*10^luxR)
+	J[2,2] = ( capacity*aS175*PLac(10^lacI,nL) - 10^lasR*(growth+dR) )/(log(10)*10^lasR)
+	J[3,3]  = ( capacity*aL*P76(10^luxR,10^lasR,c6,c12,nR,KR6,KR12,nS,KS6,KS12,e76,KGR_76,KGS_76) - 10^lacI*(growth+dL+iI*IPTG) )/(log(10)*10^lacI)
+	J[4,4] = ( capacity*aT*P81(10^luxR,10^lasR,c6,c12,nR,KR6,KR12,nS,KS6,KS12,e81,KGR_81,KGS_81) - 10^tetR*(growth+dT+iA*ATC) )/(log(10)*10^tetR)
+
+    return J
+end
 
 boundLasR(lasR,c6,c12,nS,KS6,KS12) = lasR^2 * ( (KS6*10^c6)^nS + (KS12*10^c12)^nS ) / (1.0 + KS6*10^c6 + KS12*10^c12 )^nS
 boundLuxR(luxR,c6,c12,nR,KR6,KR12) = luxR^2 * ( (KR6*10^c6)^nR + (KR12*10^c12)^nR ) / (1.0 + KR6*10^c6 + KR12*10^c12 )^nR
@@ -82,30 +89,14 @@ P81(luxR,lasR,c6,c12,nR,KR6,KR12,nS,KS6,KS12,e81,KGR_81,KGS_81) = ( e81 + KGR_81
 PLac(lacI,nL) = 1.0/(1.0+lacI^nL)
 PTet(tetR,nT) = 1.0/(1.0+tetR^nT)
 
+capacity,growth,K,KGR_76,KGS_76,KGR_81,KGS_81,KR6,KS6,KR12,KS12,nR,nS,nL,nT,aR33,aS175,aL,aT,e76,e81,aYFP,aCFP,dR,dYFP,dCFP,dL,dT,iA,iI,ATC,IPTG,c12,c6 = parameters
+p = [capacity,growth,K,KGR_76,KGS_76,KGR_81,KGS_81,KR6,KS6,KR12,KS12,nR,nS,nL,nT,aR33,aS175,aL,aT,e76,e81,aYFP,aCFP,dR,dYFP,dCFP,dL,dT,iA,iI,ATC,IPTG,c12,c6]
+curve = @time limit_curve(
+	(u,c12,c6) -> rates(u,   [capacity,growth,K,KGR_76,KGS_76,KGR_81,KGS_81,KR6,KS6,KR12,KS12,nR,nS,nL,nT,aR33,aS175,aL,aT,e76,e81,aYFP,aCFP,dR,dYFP,dCFP,dL,dT,iA,iI,ATC,IPTG,c12,c6]),
+	(u,c12,c6) -> Jacobian(u,[capacity,growth,K,KGR_76,KGS_76,KGR_81,KGS_81,KR6,KS6,KR12,KS12,nR,nS,nL,nT,aR33,aS175,aL,aT,e76,e81,aYFP,aCFP,dR,dYFP,dCFP,dL,dT,iA,iI,ATC,IPTG,c12,c6]),
+	[0.0,0.0,0.0,0.0],2.0,2.0; maxSteps=200, pMin=-1.39, pMax=4.88 )
 
-# integrate till steady state
-ode = ODEProblem(rates, zeros(n_components), (0.0,t_final), parameters)
-solution = solve(ode)
-plot(solution)
+plot(curve.branch[2,:],curve.branch[1,:],
+	label="fold curve",color="green")
 
-# find limit point
-problem = BifurcationProblem(
-    ODEProblem(rates, solution.u[end], *, parameters),
-    theta, theta_range
-)
-
-solver = init(problem)
-solve!(solver)
-plot(solver.sol)
-
-special_intervals(solver)
-
-# outline of cusp
-problem = BifurcationProblem(
-    special_intervals(solver)[1], solver,
-    phi, phi_range
-)
-
-solver = init(problem)
-solve!(solver)
-plot(solver.sol)
+rates([0.,0.,0.,0.],p)

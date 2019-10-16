@@ -32,6 +32,7 @@ def get_bifurcations(crn_path,model,data_path):
 		model = Model(pars = parameters , **system_specifications)
 
 		model.integrate()
+		#model.get_cusp('c12','c6')
 		model.get_cusp('c6','c12')
 	
 	liquid_data = read_csv(data_path)
@@ -56,7 +57,7 @@ def generate_figure(model,c6,c12,cfp,yfp):
 	if model :
 		region = model.bifurcations['LC1']
 		region_c6,region_c12 = region.curve[:-1,region.params].T
-		fill_between(10**region_c12,10**region_c6,facecolor='white',hatch='///', edgecolor='k',linewidth=0)
+		plot(10**region_c12,10**region_c6,color='white',linewidth=3)
 	
 	# flow cytometry points
 	scatter(1e-1,100,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')

@@ -27,7 +27,7 @@ directive parameters [
   aR33 = 9.61357377397729, {interval=Log; distribution=TruncatedNormal(9.13793,0.25319458919969,1,100); variation=Random};
   aS175 = 2.92159578355242, {interval=Log; distribution=TruncatedNormal(2.59566,0.0305122434442307,1,100); variation=Random};
   aL = 65.2589987503168, {interval=Log; distribution=Uniform(0.01,100); variation=Random};
-  aT = 60.6259602781465, {interval=Log; distribution=Uniform(0.01,100); variation=Random};
+  aT = 65.6259602781465, {interval=Log; distribution=Uniform(0.01,100); variation=Random};
 
   e76 = 0.0203965308312284, {interval=Log; distribution=TruncatedNormal(0.0310181,0.000512734824251289,0.0001,1); variation=Random};
   e81 = 0.00611932024058379, {interval=Log; distribution=TruncatedNormal(0.00144038,0.000615871739893949,0.0001,1); variation=Random};
@@ -44,8 +44,8 @@ directive parameters [
   // derepressors
   iA = 0.146707944645707, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
   iI = 129.229930836576, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
-  ATC = 0;
-  IPTG = 0;
+  ATC = 0.0;
+  IPTG = 0.010;
 ]
 
 directive rates [
