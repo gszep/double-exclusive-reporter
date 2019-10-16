@@ -1,6 +1,7 @@
 from __future__ import print_function
 from PyDSTool import Vode_ODEsystem,args,ContClass,Generator
 from numpy import zeros
+from matplotlib.pyplot import *
 
 class Model(object) :
 
