@@ -1,5 +1,7 @@
 from __future__ import print_function
 from PyDSTool import Vode_ODEsystem,args,ContClass,Generator
+from PyDSTool.Toolbox.phaseplane import find_fixedpoints
+
 from numpy import zeros
 from matplotlib.pyplot import *
 
@@ -10,42 +12,29 @@ class Model(object) :
 		self.system = args( name='system', **kwargs )
 		self.state_keys = kwargs['varspecs'].keys()
 
-		init = zeros(len(self.state_keys))
-		self.system.ics = dict(zip(self.state_keys,init))
 
-		
-	def integrate(self) :
-		'''integrate system in given time domain'''
+	def initial_fixed_point(self) :
+		print('finding initial fixed points...')
 
 		self.odes = Vode_ODEsystem(self.system)
-		trajectory = self.odes.compute('trajectory')
-		trajectory = trajectory.sample()
-
-		figure(figsize=(6,6))
-		title('stability check', y=1.02, fontsize=16)
-		plot(trajectory); xlabel('iteration, i',fontsize=16); ylabel('state values',fontsize=16)
-		show()
-
-		steady_state = trajectory.coordarray[:,-1]
-		steady_state = dict(zip(self.state_keys,steady_state))
-		self.system.ics = steady_state
+		self.system.ics = find_fixedpoints(self.odes, n=3, eps=1e-8)[0]
+		self.system.ttype = int
 
 
 	def get_cusp(self,*params) :
 		'''get cusp bifurcation diagrams via parameter continuation'''
 
-		self.system.ttype = int; del self.system.tdomain
+		self.initial_fixed_point()
 		self.bifurcations = ContClass(Generator.MapSystem(self.system))
-		
+
 		print('finding limit point...')
 		self.bifurcations.newCurve(args(
 			freepars = [list(params)[0]], name='EQ1', type='EP-C', MaxNumPoints = 100,
-			LocBifPoints='LP', StepSize = 0.1, MaxStepSize=0.1, StopAtPoints = ['B','LP'],
-			TestTol=0.1 ))
-		
+			LocBifPoints='LP', StepSize = 0.1, MaxStepSize=0.1, StopAtPoints = ['B','LP']))
+
 		print(' - forwards')
 		self.bifurcations['EQ1'].forward()
-		
+
 		if not self.bifurcations['EQ1'].getSpecialPoint('LP1') :
 			self.bifurcations.delCurve('EQ1')
 		
@@ -83,7 +72,6 @@ class Model(object) :
 					raise Exception('no cusp point found')
 
 			print('done')
-
 
 		else :
 			 raise Exception('no limit points found!')

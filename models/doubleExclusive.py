@@ -1,16 +1,16 @@
 # kwargs for initialising Model object with double exclusive reporter
 system_specifications = {
 
-	# temporal and parameter domains
-	'tdomain' : [0,12],
+	# state and parameter domains
 	'pdomain' : { 'c12': [-1.39,4.88], 'c6': [-1.39,4.88] },
+	'xdomain' : {'luxR': [-5,5], 'lasR': [-5,5], 'lacI': [-5,5], 'tetR': [-5,5]},
 
 	# rate functions
 	'varspecs' : {
-		'luxR': '( capacity*aR33*PTet(10**tetR) - 10**luxR*(growth+dR) )/(log(10)*10**luxR)',
-		'lasR': '( capacity*aS175*PLac(10**lacI) - 10**lasR*(growth+dR) )/(log(10)*10**lasR)',
-		'lacI': '( capacity*aL*P76(10**luxR,10**lasR) - 10**lacI*(growth+dL+iI*IPTG) )/(log(10)*10**lacI)',
-		'tetR': '( capacity*aT*P81(10**luxR,10**lasR) - 10**tetR*(growth+dT+iA*ATC) )/(log(10)*10**tetR)',
+		'luxR': '( capacity*aR33*PTet(10**tetR) - 10**luxR*(growth+dR) )/(log(10)*10**luxR+0.01)',
+		'lasR': '( capacity*aS175*PLac(10**lacI) - 10**lasR*(growth+dR) )/(log(10)*10**lasR+0.01)',
+		'lacI': '( capacity*aL*P76(10**luxR,10**lasR) - 10**lacI*(growth+dL+iI*IPTG) )/(log(10)*10**lacI+0.01)',
+		'tetR': '( capacity*aT*P81(10**luxR,10**lasR) - 10**tetR*(growth+dT+iA*ATC) )/(log(10)*10**tetR+0.01)',
 	},
 
 	# promoter activities

@@ -27,13 +27,16 @@ def get_bifurcations(crn_path,model,data_path):
 	for a given range of diffusives c6 and c12'''
 
 	if model :
-
 		parameters.update(crn_parameters(crn_path))
-		model = Model(pars = parameters , **system_specifications)
 
-		model.integrate()
-		try : model.get_cusp('c6','c12')
-		except : model.get_cusp('c12','c6')
+		try : 
+			print('######### search along c6 axis #########')
+			model = Model(pars = parameters , **system_specifications)
+			model.get_cusp('c6','c12')
+		except : 
+			print('######### search along c12 axis #########')
+			model = Model(pars = parameters , **system_specifications)
+			model.get_cusp('c12','c6')
 
 	liquid_data = read_csv(data_path)
 	cfp,yfp = liquid_data.pivot('C6','C12','P(ECFP/mRFP1)'), liquid_data.pivot('C6','C12','P(EYFP/mRFP1)')
@@ -57,7 +60,7 @@ def generate_figure(model,c6,c12,cfp,yfp):
 	if model :
 		region = model.bifurcations['LC1']
 		region_c6,region_c12 = region.curve[:-1,region.params].T
-		fill_between(10**region_c12,10**region_c6,facecolor='white',hatch='///', edgecolor='k',linewidth=0)
+		plot(10**region_c12,10**region_c6,color='black',linewidth=3)
 	
 	# flow cytometry points
 	scatter(1e-1,100,s=200,facecolor='#00b0f0',marker='s',edgecolors='k')
@@ -102,7 +105,7 @@ def generate_figure(model,c6,c12,cfp,yfp):
 
 	plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=1,markeredgecolor='k',markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='flow cytometry')
 	plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=0,markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='plate reader')
-	scatter(None,None,s=200,facecolor='white',marker='s',edgecolors='none',hatch='///',label='bistable prediction')
+	plot([None],[None],color='black',linewidth=3, label='saddle-node bifurcation')
 	legend(fontsize=16,loc=2)
 	show()
 
