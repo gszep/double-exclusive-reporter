@@ -1,6 +1,8 @@
 from __future__ import print_function
+from warnings import filterwarnings
+filterwarnings("ignore", category=RuntimeWarning)
 
-from numpy import array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul,ndarray
+from numpy import NaN,array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul,ndarray
 from numpy.random import uniform
 
 from sympy.functions.combinatorial.factorials import binomial
@@ -12,6 +14,7 @@ from re import findall,sub,search
 from .utils import isnumber
 from .colors import colors
 
+from joblib import Parallel,delayed
 from .roots import roots_parallel
 from scipy import optimize
 
@@ -357,3 +360,48 @@ class Model(object) :
         output_shape = input_shape[:-1] + (self.n_nontrivials,)
         steady_states.shape = output_shape
         return steady_states
+
+    def get_local_equilibria(self,c) :
+        '''solves for local steady state concentration x,
+        given input signal c, which can be a grid of values'''
+
+        # flattening input
+        input_shape = c.shape
+        c.shape = (-1,2)
+
+        # parallel solve for steady states
+        args = [ { 'c6':c6, 'c12':c12 } for c6,c12 in c ]
+
+        for state,value in zip(self.names,self.states) :
+            self._init[state] = value
+
+        initial_guesses = []
+        for k,name in enumerate(self.nontrivials):
+            initial_guesses += [getattr(self,name)]
+        initial_guesses = array(initial_guesses).T
+
+        self._set_states(spatial=False)
+        steady_states = roots_parallel_local(self.nullcines, initial_guesses,args=args)
+        self._set_states(spatial=hasattr(self,'_spatial'))
+
+        # return original shaped array
+        output_shape = input_shape[:-1] + (self.n_nontrivials,)
+        steady_states.shape = output_shape
+        return steady_states
+
+
+def root_local(function,initial_guess,args=()) :
+
+    optimization = optimize.root(function,initial_guess,args=args,method='hybr', options={'maxfev':10000,'factor':1})
+    if optimization.success :
+        return optimization.x
+    else :
+        optimization.x[:] = NaN
+        return optimization.x
+
+def roots_parallel_local(function, initial_guesses, args=[()] ):
+    root_list = Parallel(n_jobs=-1)(
+                delayed(root_local)(function,initial_guess,args=arg)
+                for initial_guess,arg in zip(initial_guesses,args))
+
+    return array(root_list)
