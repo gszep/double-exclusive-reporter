@@ -1,3 +1,5 @@
+directive simulation { final=24; points=250; plots=[yfp;cfp]; }
+directive spatial { dimensions = 1; xmax = 0.016; dt = 0.007; nx = 101; diffusibles=[c6=0.0000018;c12=0.0000009];  boundary = ZeroFlux }
 directive parameters [
 
   // growth parameters
