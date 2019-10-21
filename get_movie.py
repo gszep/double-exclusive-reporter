@@ -86,15 +86,18 @@ def main(crn_path,C6,C12,n_timepoints,t_final) :
     width = model._xmax / 4.0
 
     # initial condition
+    model.c6[:] =  1e-1
+    model.c12[:] = 1e-1
+
     model.c6[model.space<width] = model._xmax * C6 / width
     model.c12[model.space>=(model._xmax-width)] = model._xmax * C12 / width
 
     j = 0
     while model.time < t_final :
-        model.time_step() 
 
         record = int(model.time/model._dt) % int(t_final/model._dt/n_timepoints) == 0
-        if record : j = save_frame(model,region,C6,C12,j)
+        if record & (model.time > 0.16) : j = save_frame(model,region,C6,C12,j)
+        model.time_step() 
 
     create_animation(C6,C12)
 
