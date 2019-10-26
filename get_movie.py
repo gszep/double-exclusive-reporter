@@ -26,8 +26,8 @@ def get_args() :
 
 def save_frame(model,region,C6,C12,j=0) :
 
-    fig, (ax1, ax3) = subplots(1,2, figsize=(14,8))
-    fig.suptitle(r'$t$ = {:.3} hours, $C6$ = {:} nM, $C12$ = {:} nM'.format(model.time,C6,C12), fontsize=16, y=0.15, x=0.73)
+    fig, (ax1, ax3) = subplots(1,2, figsize=(14,9))
+    fig.suptitle(r'$t$ = {:.3} hours, $C6$ = {:} nM, $C12$ = {:} nM'.format(model.time,C6,C12), fontsize=16, y=0.15, x=0.69)
     ax2 = twinx(ax1)
 
     p1 = ax1.fill_between(100*model.space,model.cfp,color='#00b0f0',linewidth=0,alpha=0.5)
@@ -62,12 +62,13 @@ def save_frame(model,region,C6,C12,j=0) :
     ax3.set_xlabel(r'morphogen, $C_{12}$ / nM',fontsize=16)
     ax3.set_ylabel(r'morphogen, $C_{6}$ / nM',fontsize=16);
 
+    ax3.text(10**2.6,10**2.2,'bistable region',fontsize=16)
     ax3.set_xscale('log'); ax3.set_yscale('log')
     ax3.set_xlim(0.04,75000); ax3.set_ylim(0.04,75000) 
     
     fig.legend([(p1, p2), (p5,p6), (p3,p4), p7], [r'cell responses $CFP$,$YFP$', r'local equilibria $CFP$,$YFP$', r'morphogens $C_{6}$,$C_{12}$', r'homogenous equilibrium'],
-               handler_map={tuple: HandlerTuple(ndivide=None)}, fontsize=16, loc=(0.28,0.05), borderaxespad=0.1)
-    subplots_adjust(bottom=0.3)
+               handler_map={tuple: HandlerTuple(ndivide=None)}, fontsize=16, loc=(0.18,0.06), borderaxespad=0.1)
+    subplots_adjust(bottom=0.35)
     savefig(str(j).zfill(4)+'.png')
     close()
 
