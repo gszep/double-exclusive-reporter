@@ -9,7 +9,7 @@ from .colors import colors
 from .utils import isnumber
 
 
-def fromcrn(file_path) :
+def fromcrn(file_path,dims=1) :
     '''Creates model object from parameters in a given crn file
 
     --- parameters ---
@@ -41,6 +41,7 @@ def fromcrn(file_path) :
         # parse initial conditions
         kwargs = parse_initials(file_string,kwargs)
 
+    kwargs['dims'] = dims
     return Model(**kwargs)
 
 

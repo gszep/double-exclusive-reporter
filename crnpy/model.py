@@ -2,7 +2,7 @@ from __future__ import print_function
 from warnings import filterwarnings
 filterwarnings("ignore", category=RuntimeWarning)
 
-from numpy import NaN,array,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul,ndarray
+from numpy import NaN,array,einsum,meshgrid,unique,log,exp,ones,zeros,mean,inf,gradient,linspace,sqrt,amax,append,full,prod,matmul,ndarray
 from numpy.random import uniform
 
 from sympy.functions.combinatorial.factorials import binomial
@@ -31,21 +31,31 @@ class Model(object) :
         self._parse_args(kwargs)
         self._set_parameters()
 
+        if hasattr(self,'_spatial') :
+            print(colors.yellow,'[model]',colors.reset,'setting spatial directive')
+            self._set_boundary()
+
+            if kwargs['dims'] == 1 :
+                self._dimensions = 1
+
+                self.space = linspace(0,self._xmax,self._nx)
+                self.dx = self.space[1]-self.space[0]
+
+            if kwargs['dims'] == 2 :
+                self._dimensions = 2
+
+                space = linspace(-self._xmax/2.0,self._xmax/2.0,self._nx)
+                self.dx = space[1]-space[0]
+                self.space,self.spacedash = meshgrid(space,space)
+
+        else :
+            print(colors.yellow,'[model]',colors.reset,'non-spatial directive')
+
         self._set_states(spatial=hasattr(self,'_spatial'))
         self._set_rates()
 
         self._set_stoichiometry()
         self._set_propensity()
-
-        if hasattr(self,'_spatial') :
-            print(colors.yellow,'[model]',colors.reset,'setting spatial directive')
-
-            self._set_boundary()
-            self.space = linspace(0,self._xmax,self._nx)
-            self.dx = self.space[1]-self.space[0]
-
-        else :
-            print(colors.yellow,'[model]',colors.reset,'non-spatial directive')
 
 
     def _parse_args(self,kwargs):
@@ -102,7 +112,7 @@ class Model(object) :
         '''parse string types as expressions involving class attributes'''
 
         # extract unique attribute names from value string
-        for attr_name in unique(findall('\w+',value)) :
+        for attr_name in unique(findall(r'\w+',value)) :
             if not isnumber(attr_name) :
 
                 # prepend 'self' to reference attributes
@@ -241,7 +251,7 @@ class Model(object) :
 
             # mass action rule
             if action_type == '{}':
-                reactants,products = reaction.split('->')
+                reactants,_ = reaction.split('->')
 
                 state_product = '*'.join([
                     ('('+str(binomial('state',reactants.count('self.'+name))
@@ -299,7 +309,7 @@ class Model(object) :
         '''return reactive term'''
 
         # TODO(gszep) matmul each time inefficient?
-        return matmul(self.stoichiometry,self.propensity)
+        return einsum(' nk, k... -> n...', self.stoichiometry, self.propensity)
 
 
     def diffusion(self):
@@ -376,7 +386,7 @@ class Model(object) :
             self._init[state] = value
 
         initial_guesses = []
-        for k,name in enumerate(self.nontrivials):
+        for _,name in enumerate(self.nontrivials):
             initial_guesses += [getattr(self,name)]
         initial_guesses = array(initial_guesses).T
 
