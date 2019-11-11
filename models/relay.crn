@@ -46,9 +46,9 @@ directive parameters [
   ATC = 0.5;
   IPTG = 0.001;
 
-  kC6 = 4.67e-05;
-  kC12 = 60.96;
-  dluxI = 0.007;
+  kC6 = 0.0; //1200.0;
+  kC12 = 1200.0; // 1200.96;
+  dluxI = 1.07;
   dlasI = 1.09;
 ]
 
@@ -90,9 +90,9 @@ directive rates [
 | cfp ->{dCFP}
 | cfp ->[([growth] * [cfp])]
 
-//| ->[[capacity]*[P81]] luxI
-//| luxI ->{dluxI}
-//| ->[kC6*[luxI]] c6
+| ->[[capacity]*[P81]] luxI
+| luxI ->{dluxI}
+| ->[kC6*[luxI]] c6
 
 | ->[[capacity]*[P76]] lasI
 | lasI ->{dlasI}

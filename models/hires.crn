@@ -45,6 +45,11 @@ directive parameters [
   iI = 841.021570241517, {interval=Log; distribution=Uniform(0.01,1000); variation=Random};
   ATC = 0.5;
   IPTG = 0.001;
+
+  kC6 = 0.0;
+  kC12 = 0.0;
+  dluxI = 0.0;
+  dlasI = 0.0;
 ]
 
 directive rates [
@@ -84,3 +89,11 @@ directive rates [
 | ->[(([capacity] * aCFP) * [P76])] cfp
 | cfp ->{dCFP}
 | cfp ->[([growth] * [cfp])]
+
+//| ->[[capacity]*[P81]] luxI
+//| luxI ->{dluxI}
+//| ->[kC6*[luxI]] c6
+
+//| ->[[capacity]*[P76]] lasI
+//| lasI ->{dlasI}
+//| ->[kC12*[lasI]] c12

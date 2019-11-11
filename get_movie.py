@@ -38,13 +38,13 @@ def save_frame(model,region,j=0) :
     p3, = ax2.plot(100*model.space,model.c6,color='#000099',linewidth=5)
     p4, = ax2.plot(100*model.space,model.c12,color='#ff6600',linewidth=5)
 
-    cgrid = vstack([model.c6,model.c12]).T
-    local_equilibria = model.get_local_equilibria(cgrid)
-    local_cfp = local_equilibria[:,model.nontrivials.index('cfp')]
-    local_yfp = local_equilibria[:,model.nontrivials.index('yfp')]
+    # cgrid = vstack([model.c6,model.c12]).T
+    # local_equilibria = model.get_local_equilibria(cgrid)
+    # local_cfp = local_equilibria[:,model.nontrivials.index('cfp')]
+    # local_yfp = local_equilibria[:,model.nontrivials.index('yfp')]
 
-    p5, = ax1.plot(100*model.space,local_cfp,'o',color='#00b0f0')
-    p6, = ax1.plot(100*model.space,local_yfp,'o',color='#ffc000')
+    # p5, = ax1.plot(100*model.space,local_cfp,'o',color='#00b0f0')
+    # p6, = ax1.plot(100*model.space,local_yfp,'o',color='#ffc000')
 
     ax1.set_xlabel('space, $x$ / cm',fontsize=16)
     ax1.set_ylabel('concentrations / nM',fontsize=16)
@@ -61,6 +61,10 @@ def save_frame(model,region,j=0) :
     p7, = ax3.plot(C12,C6,'x',color='black')
     ax3.plot(10**region_c12,10**region_c6,color='black',linewidth=3)
 
+    p5 = ax3.quiver( model.c12, model.c6,
+        model.capacity*model.P76*model.kC12/model.dlasI,
+        model.capacity*model.P81*model.kC6/model.dluxI, color='red' )
+
     ax3.set_xlabel(r'morphogen, $C_{12}$ / nM',fontsize=16)
     ax3.set_ylabel(r'morphogen, $C_{6}$ / nM',fontsize=16)
 
@@ -68,7 +72,7 @@ def save_frame(model,region,j=0) :
     ax3.set_xscale('log'); ax3.set_yscale('log')
     ax3.set_xlim(0.04,75000); ax3.set_ylim(0.04,75000) 
     
-    fig.legend([(p1, p2), (p5,p6), (p3,p4), p7], [r'cell responses $CFP$,$YFP$', r'local equilibria $CFP$,$YFP$', r'morphogens $C_{6}$,$C_{12}$', r'homogenous equilibrium'],
+    fig.legend([(p1, p2), (p5), (p3,p4), p7], [r'cell responses $CFP$,$YFP$', r'relay reaction', r'morphogens $C_{6}$,$C_{12}$', r'homogenous equilibrium'],
                handler_map={tuple: HandlerTuple(ndivide=None)}, fontsize=16, loc=(0.18,0.06), borderaxespad=0.1)
     subplots_adjust(bottom=0.35)
     savefig(str(j).zfill(4)+'.png')
