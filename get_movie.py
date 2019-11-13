@@ -49,9 +49,9 @@ def save_frame(model,region,j=0) :
     ax1.set_xlabel('space, $x$ / cm',fontsize=16)
     ax1.set_ylabel('concentrations / nM',fontsize=16)
     
-    ax1.set_ylim(0,); ax2.set_ylim(0,2000); ax1.set_ylim(0,5000)
+    ax1.set_ylim(0,); ax2.set_ylim(0,); ax1.set_ylim(0,)
     ax1.set_yticks([]); ax2.set_yticks([])
-    xlim(0,1.6)
+    xlim(0,)
     
     mask = model.cfp > model.yfp
     ax3.plot(model.c12[mask],model.c6[mask],'.',color='gray',ms=12)
