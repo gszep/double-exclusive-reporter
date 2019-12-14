@@ -31,17 +31,17 @@ def fit(data,threshold = 25000,t_final=24,x_width=1.0) :
 	x,t = linspace(0,x_width,num=width),linspace(0,t_final,num=n_frames)
 
 	xx,tt = meshgrid(x,t)
-	X,Y = meshgrid(x,linspace(0,1,num=height))
+	X,_ = meshgrid(x,linspace(0,1,num=height))
 	cfp,yfp,rfp = 0,1,2
 	
 	# intensity normalisation
 	data /= nanmax(data,axis=(0,1,2))
 
 	# setting values outside grid squares to nan
-	mask = data[-1,...,rfp] < 0.5
+	mask = data[-1,...,rfp] < 0.75
 	mask = stack([[ mask for _ in range(n_frames) ] for _ in range(n_channels) ],axis=-1)
 	data[mask] = NaN
-	
+
 	# create regressors
 	yfp_predictor = Pipeline([("feature-map", FunctionTransformer(features)), ("regressor", BayesianRidge() )])
 	cfp_predictor = Pipeline([("feature-map", FunctionTransformer(features)), ("regressor", BayesianRidge() )])
@@ -73,7 +73,7 @@ def get_args() :
 def main(data_path) :
 
 	cfp,yfp,_ = 0,1,2
-	data = io.imread(data_path).astype(float)
+	data = io.imread(data_path).astype(float); data = log10(data+0.0001)
 	xx,tt,predictions,yfp_steady_state,cfp_steady_state = fit(data)
 
 	figure(figsize=(7,7))
@@ -94,7 +94,6 @@ def main(data_path) :
 	contourf(1.6*xx,tt,predictions[...,1],cmap='cyan')
 
 	difference = predictions[...,0].T-predictions[...,1].T
-	difference[(tt<7).T] = NaN
 	contour(1.6*xx.T,tt.T,difference,levels=[0],colors=['black'],linewidths=[3])
 
 	xlabel('width, $x$ / cm',fontsize=16)
