@@ -35,6 +35,7 @@ directive parameters [
 
   // degredations
   dR = 9.99057554103193, {interval=Log; distribution=TruncatedNormal(9.99195,0.00797687908896706,0.01,10); variation=Random};
+  dS = 9.99057554103193, {interval=Log; distribution=TruncatedNormal(9.99195,0.00797687908896706,0.01,10); variation=Random};
   dYFP = 0.150605054651385, {interval=Log; distribution=TruncatedNormal(0.137733,0.00116547415243754,0.001,1); variation=Random};
   dCFP = 0.444873010390183, {interval=Log; distribution=TruncatedNormal(0.449436,0.00383930983381128,0.001,1); variation=Random};
   dL = 1.03176136408327, {interval=Log; distribution=Uniform(0.001,10); variation=Random};
@@ -69,7 +70,7 @@ directive rates [
 | luxR ->[([growth] * [luxR])]
 
 | ->[(([capacity] * aS175) * [PLac])] lasR
-| lasR ->{dR}
+| lasR ->{dS}
 | lasR ->[([growth] * [lasR])]
 
 | ->[(([capacity] * aT) * [P81])] tetR
