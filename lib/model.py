@@ -18,7 +18,9 @@ class Model(object) :
 
 		self.odes = Vode_ODEsystem(self.system)
 		steady_state = find_fixedpoints(self.odes, n=3, eps=1e-8)
-		if len(steady_state) > 0 :
+		nS = len(steady_state)
+		print('- found %d fixed point(s)'%nS)
+		if nS > 0 :
 
 			self.system.ics = steady_state[0]
 			self.system.ttype = int
