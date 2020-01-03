@@ -4,7 +4,8 @@ from lib.utils import str2bool
 
 from lib.model import Model
 from lib.parsers import crn_parameters
-from models.doubleExclusive import system_specifications,parameters
+import models.doubleExclusive as model1
+import models.doubleExclusive_v2 as model2
 
 from pandas import read_csv
 from lib.colors import cyan,yellow
@@ -17,17 +18,28 @@ def get_args() :
 	parser = ArgumentParser(description='creates bifrucation plot from crn file parameters')
 
 	parser.add_argument('crn_path', type=str, help='path to crn file')
-	parser.add_argument('--model', type=str2bool, default=True, help='model predictions')
+	parser.add_argument('--predictions', type=str2bool, default=True, help='model predictions')
+	parser.add_argument('--version', type=int, default=1, help='model version')
 	parser.add_argument('--data_path', type=str, default='./data/liquid/char_ExRep_1_R33S175ExRepTet33AAVLac300ND.csv',help='liquid culture dataset')
 	parser.add_argument('--save_path', type=str, default='',help='save bifrucation only')
 	return vars(parser.parse_args())
 
 
-def get_bifurcations(crn_path,model,data_path):
-	'''Calculate bifrucation diagram for double exclusive reporter
-	for a given range of diffusives c6 and c12'''
+def get_bifurcations(crn_path,predictions,version,data_path):
+	'''Calculate bifurcation diagram for double exclusive reporter
+	for a given range of concentrations of c6 and c12'''
 
-	if model :
+	print('Generating bifurcation diagram for version %d'%version)
+	if version == 1:
+		parameters = model1.parameters
+		system_specifications = model1.system_specifications
+	elif version == 2:
+		parameters = model2.parameters
+		system_specifications = model2.system_specifications
+	else:
+		raise Exception('Unknown model version')
+
+	if predictions:
 		parameters.update(crn_parameters(crn_path))
 
 		try : 
@@ -120,10 +132,10 @@ def generate_figure(model,data_path,c6,c12,cfp,yfp):
 	show()
 
 
-def main(crn_path,model,data_path,save_path) :
+def main(crn_path,predictions,version,data_path,save_path) :
 	'''parametrisation of main program'''
 
-	model,c6,c12,cfp,yfp = get_bifurcations(crn_path,model,data_path)
+	model,c6,c12,cfp,yfp = get_bifurcations(crn_path,predictions,version,data_path)
 	if save_path != '' :
 		region = model.bifurcations['LC1']
 		save(save_path,region.curve[:-1,region.params].T)
