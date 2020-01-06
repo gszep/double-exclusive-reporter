@@ -33,6 +33,7 @@ directive parameters [
 
   // degredations
   dR = 9.99057554103193, {interval=Log; distribution=TruncatedNormal(9.99195,0.00797687908896706,0.01,10); variation=Random};
+  dS = 9.99057554103193, {interval=Log; distribution=TruncatedNormal(9.99195,0.00797687908896706,0.01,10); variation=Random};
   dYFP = 0.150605054651385, {interval=Log; distribution=TruncatedNormal(0.137733,0.00116547415243754,0.001,1); variation=Random};
   dCFP = 0.444873010390183, {interval=Log; distribution=TruncatedNormal(0.449436,0.00383930983381128,0.001,1); variation=Random};
   dL = 0.53176136408327, {interval=Log; distribution=Uniform(0.001,10); variation=Random};
@@ -77,7 +78,7 @@ directive rates [
 | luxR1 ->{dR}
 | luxR1 ->[([growth] * [luxR1])]
 | ->[(([capacity] * aS175) * [PLac1])] lasR1
-| lasR1 ->{dR}
+| lasR1 ->{dS}
 | lasR1 ->[([growth] * [lasR1])]
 | ->[(([capacity] * aT) * [P811])] tetR1
 | tetR1 ->{dT}
@@ -102,7 +103,7 @@ directive rates [
 | luxR2 ->{dR}
 | luxR2 ->[([growth] * [luxR2])]
 | ->[(([capacity] * aS175) * [PLac2])] lasR2
-| lasR2 ->{dR}
+| lasR2 ->{dS}
 | lasR2 ->[([growth] * [lasR2])]
 | ->[(([capacity] * aT) * [P812])] tetR2
 | tetR2 ->{dT}
