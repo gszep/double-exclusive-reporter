@@ -58,23 +58,23 @@ class Model(object) :
 		
 			print('following limit curve...')
 			self.bifurcations.newCurve(args(
-				freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 100,
+				freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 200,
 				initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
 				StopAtPoints = ['B'] ))
 
-			print(' - forwards')
-			self.bifurcations['LC1'].forward()  
+			print(' - backwards')
+			self.bifurcations['LC1'].backward()  
 			
 			if not self.bifurcations['LC1'].getSpecialPoint('CP1') :
 				self.bifurcations.delCurve('LC1')
 				
 				self.bifurcations.newCurve(args(
-					freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 100,
+					freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 200,
 					initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
 					StopAtPoints = ['B'] ))
 			
-				print(' - backwards')
-				self.bifurcations['LC1'].backward()
+				print(' - forwards')
+				self.bifurcations['LC1'].forward()
 				
 				if not self.bifurcations['LC1'].getSpecialPoint('CP1') :
 					raise Exception('no cusp point found')
