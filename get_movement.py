@@ -35,10 +35,10 @@ def fit(data,threshold = 25000,t_final=24,x_width=1.0) :
 	cfp,yfp,rfp = 0,1,2
 	
 	# intensity normalisation
-	data /= nanmax(data,axis=(0,1,2))
+	data /= array([5519.0,4994.0,2296.0])
 
 	# setting values outside grid squares to nan
-	mask = data[-1,...,rfp] < 0.75
+	mask = data[-1,...,rfp] < 0.5*amax(data[-1,...,rfp])
 	mask = stack([[ mask for _ in range(n_frames) ] for _ in range(n_channels) ],axis=-1)
 	data[mask] = NaN
 
@@ -73,7 +73,7 @@ def get_args() :
 def main(data_path) :
 
 	cfp,yfp,_ = 0,1,2
-	data = io.imread(data_path).astype(float); data = log10(data+0.0001)
+	data = io.imread(data_path).astype(float); #data = log10(data+0.0001)
 	xx,tt,predictions,yfp_steady_state,cfp_steady_state = fit(data)
 
 	figure(figsize=(7,7))
@@ -94,6 +94,7 @@ def main(data_path) :
 	contourf(1.6*xx,tt,predictions[...,1],cmap='cyan')
 
 	difference = predictions[...,0].T-predictions[...,1].T
+	difference[tt.T<8] = NaN
 	contour(1.6*xx.T,tt.T,difference,levels=[0],colors=['black'],linewidths=[3])
 
 	xlabel('width, $x$ / cm',fontsize=16)
