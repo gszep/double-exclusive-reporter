@@ -10,7 +10,7 @@ import models.doubleExclusive_v2 as model2
 from pandas import read_csv
 from lib.colors import cyan,yellow
 
-from numpy import meshgrid,log10,save
+from numpy import meshgrid,log10,save,savetxt
 from matplotlib.pyplot import plot,scatter,figure,xlim,ylim,xlabel,ylabel,xscale,yscale,colorbar,pcolor,fill_between,show,legend
 
 def get_args() :
@@ -42,14 +42,9 @@ def get_bifurcations(crn_path,predictions,version,data_path):
 	if predictions:
 		parameters.update(crn_parameters(crn_path))
 
-		try : 
-			print('######### search along c6 axis #########')
-			model = Model(pars = parameters , **system_specifications)
-			model.get_cusp('c6','c12')
-		except : 
-			print('######### search along c12 axis #########')
-			model = Model(pars = parameters , **system_specifications)
-			model.get_cusp('c12','c6')
+		print('######### search along c6 axis #########')
+		model = Model(pars = parameters , **system_specifications)
+		model.get_cusp('c6','c12')
 
 	if data_path != '' :
 		liquid_data = read_csv(data_path)
@@ -66,7 +61,7 @@ def get_bifurcations(crn_path,predictions,version,data_path):
 def generate_figure(model,data_path,c6,c12,cfp,yfp):
 	'''main program figure display'''
 
-	figure(figsize=(9,7))
+	figure(figsize=(7,7))
 	if data_path != '' :
 
 		c12shift,c6shift = 2*cfp.columns.values, 2*cfp.index.values
@@ -79,7 +74,10 @@ def generate_figure(model,data_path,c6,c12,cfp,yfp):
 	if model :
 		region = model.bifurcations['LC1']
 		region_c6,region_c12 = region.curve[:-1,region.params].T
+		region_c6 = region_c6[region_c6!=0]
+		region_c12 = region_c12[region_c12!=0]
 		plot(10**region_c12,10**region_c6,color='black',linewidth=3)
+		savetxt('./f.csv',zip(10**region_c12,10**region_c6),fmt='%1.5f')
 	
 	if data_path != '' :
 		# flow cytometry points
@@ -138,7 +136,10 @@ def main(crn_path,predictions,version,data_path,save_path) :
 	model,c6,c12,cfp,yfp = get_bifurcations(crn_path,predictions,version,data_path)
 	if save_path != '' :
 		region = model.bifurcations['LC1']
-		save(save_path,region.curve[:-1,region.params].T)
+		region_c6,region_c12 = region.curve[:-1,region.params].T
+		region_c6 = region_c6[region_c6!=0]
+		region_c12 = region_c12[region_c12!=0]
+		save(save_path,(region_c6,region_c12))
 	else :
 		generate_figure(model,data_path,c6,c12,cfp,yfp)
 

@@ -7,10 +7,10 @@ system_specifications = {
 
 	# rate functions
 	'varspecs' : {
-		'luxR': '( capacity*aR33*PTet(10**tetR) - 10**luxR*(growth+dR) )/(log(10)*10**luxR+0.01)',
-		'lasR': '( capacity*aS175*PLac(10**lacI) - 10**lasR*(growth+dS) )/(log(10)*10**lasR+0.01)',
-		'lacI': '( capacity*aL*P76(10**luxR,10**lasR) - 10**lacI*(growth+dL+iI*IPTG) )/(log(10)*10**lacI+0.01)',
-		'tetR': '( capacity*aT*P81(10**luxR,10**lasR) - 10**tetR*(growth+dT+iA*ATC) )/(log(10)*10**tetR+0.01)',
+		'luxR': '( capacity*aR33*PTet(10**tetR) - 10**luxR*(growth+dR) )/(log(10)*10**luxR+0.0000001)',
+		'lasR': '( capacity*aS175*PLac(10**lacI) - 10**lasR*(growth+dS) )/(log(10)*10**lasR+0.0000001)',
+		'lacI': '( capacity*aL*P76(10**luxR,10**lasR) - 10**lacI*(growth+dL+iI*IPTG) )/(log(10)*10**lacI+0.0000001)',
+		'tetR': '( capacity*aT*P81(10**luxR,10**lasR) - 10**tetR*(growth+dT+iA*ATC) )/(log(10)*10**tetR+0.0000001)',
 	},
 
 	# promoter activities
@@ -72,7 +72,7 @@ parameters = {
 	'IPTG' : 0.0,
 
 	# morphogens
-	'c12': 4.88, 'c6' : 4.88,
+	'c12': 4.00, 'c6' : 4.00,
 	
 	# relays
 	'kC6': 0.0, 'kC12': 0.0,
