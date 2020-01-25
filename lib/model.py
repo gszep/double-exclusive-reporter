@@ -58,22 +58,38 @@ class Model(object) :
 		
 			print('following limit curve...')
 			self.bifurcations.newCurve(args(
+<<<<<<< HEAD
 				freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 400,
 				initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
 				StopAtPoints = ['B'] ))
 
 			print(' - backward')
+=======
+				freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 200,
+				initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
+				StopAtPoints = ['B'] ))
+
+			print(' - backwards')
+>>>>>>> ba88adcb7cbf2205972338f38c31d24c7a3e756e
 			self.bifurcations['LC1'].backward()  
 			
 			if not self.bifurcations['LC1'].getSpecialPoint('CP1') :
 				self.bifurcations.delCurve('LC1')
 				
 				self.bifurcations.newCurve(args(
+<<<<<<< HEAD
 					freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 400,
 					initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
 					StopAtPoints = ['B'] ))
 			
 				print(' - forward')
+=======
+					freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 200,
+					initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
+					StopAtPoints = ['B'] ))
+			
+				print(' - forwards')
+>>>>>>> ba88adcb7cbf2205972338f38c31d24c7a3e756e
 				self.bifurcations['LC1'].forward()
 				
 				if not self.bifurcations['LC1'].getSpecialPoint('CP1') :
