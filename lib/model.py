@@ -75,7 +75,6 @@ class Model(object) :
 		
 			print('- forwards')
 			self.bifurcations['LC1for'].forward()
-				self.bifurcations['LC1'].forward()
 				
 			if not (self.bifurcations['LC1for'].getSpecialPoint('CP1')) and not (self.bifurcations['LC1back'].getSpecialPoint('CP1')):
 				raise Exception('no cusp point found')
