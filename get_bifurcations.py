@@ -10,7 +10,7 @@ import models.doubleExclusive_v2 as model2
 from pandas import read_csv
 from lib.colors import cyan,yellow
 
-from numpy import meshgrid,log10,save
+from numpy import meshgrid,log10,save,savetxt
 from matplotlib.pyplot import plot,scatter,figure,xlim,ylim,xlabel,ylabel,xscale,yscale,colorbar,pcolor,fill_between,show,legend
 
 def get_args() :
@@ -64,7 +64,7 @@ def load_data(data_path):
 def generate_figure(model, data_path):
 	'''main program figure display'''
 
-	figure(figsize=(9,7))
+	figure(figsize=(7,7))
 	if data_path != '' :
 		c6,c12,cfp,yfp = load_data(data_path)
 		c12shift,c6shift = 2*cfp.columns.values, 2*cfp.index.values
@@ -77,10 +77,15 @@ def generate_figure(model, data_path):
 	if model :
 		region_forward = model.bifurcations['LC1for']
 		region_c6, region_c12 = region_forward.curve[:-1,region_forward.params].T
+		region_c6 = region_c6[region_c6!=0]
+		region_c12 = region_c12[region_c12!=0]
 		plot(10**region_c12,10**region_c6,color='black',linewidth=3)
 		region_backward = model.bifurcations['LC1back']
 		region_c6, region_c12 = region_backward.curve[:-1,region_backward.params].T
+		region_c6 = region_c6[region_c6!=0]
+		region_c12 = region_c12[region_c12!=0]
 		plot(10**region_c12,10**region_c6,color='black',linewidth=3)
+		savetxt('./f.csv',zip(10**region_c12,10**region_c6),fmt='%1.5f')
 	
 	if data_path != '' :
 		# flow cytometry points
@@ -139,9 +144,12 @@ def main(crn_path,predictions,version,data_path,save_path) :
 	parameters, system_specifications = define_model(version, crn_path)
 	model = get_bifurcations(parameters, system_specifications, predictions)
 	if save_path != '':
-		region = model.bifurcations['LC1']
-		save(save_path,region.curve[:-1,region.params].T)
-	else:
+		region = model.bifurcations['LC1for'] # TODO: Also save backwards evaluation
+		region_c6,region_c12 = region.curve[:-1,region.params].T
+		region_c6 = region_c6[region_c6!=0]
+		region_c12 = region_c12[region_c12!=0]
+		save(save_path,(region_c6,region_c12))
+	else :
 		generate_figure(model,data_path,c6,c12,cfp,yfp)
 
 

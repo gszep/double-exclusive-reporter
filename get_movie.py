@@ -32,11 +32,11 @@ def save_frame(model,region,j=0) :
     fig.suptitle(r'$t$ = {:.3} hours, $C6$ = {:.0f} nM, $C12$ = {:.0f} nM'.format(model.time,C6,C12), fontsize=16, y=0.15, x=0.69)
     ax2 = twinx(ax1)
 
-    p1 = ax1.fill_between(100*model.space,model.cfp,color='#00b0f0',linewidth=0,alpha=0.5)
-    p2 = ax1.fill_between(100*model.space,model.yfp,color='#ffc000',linewidth=0,alpha=0.5)
+    p1 = ax1.fill_between(100*model.space,log10(model.cfp),color='#00b0f0',linewidth=0,alpha=0.5)
+    p2 = ax1.fill_between(100*model.space,log10(model.yfp),color='#ffc000',linewidth=0,alpha=0.5)
 
-    p3, = ax2.plot(100*model.space,model.c6,color='#000099',linewidth=5)
-    p4, = ax2.plot(100*model.space,model.c12,color='#ff6600',linewidth=5)
+    p3, = ax2.plot(100*model.space,log10(model.c6),color='#000099',linewidth=5)
+    p4, = ax2.plot(100*model.space,log10(model.c12),color='#ff6600',linewidth=5)
 
     # cgrid = vstack([model.c6,model.c12]).T
     # local_equilibria = model.get_local_equilibria(cgrid)
@@ -49,26 +49,31 @@ def save_frame(model,region,j=0) :
     ax1.set_xlabel('space, $x$ / cm',fontsize=16)
     ax1.set_ylabel('concentrations / nM',fontsize=16)
     
-    ax1.set_ylim(0,); ax2.set_ylim(0,); ax1.set_ylim(0,)
+    ax1.set_ylim(3,5); ax2.set_ylim(-1,4); ax1.set_ylim(0,)
     ax1.set_yticks([]); ax2.set_yticks([])
     xlim(0,)
     
     mask = model.cfp > model.yfp
-    ax3.plot(model.c12[mask],model.c6[mask],'.',color='gray',ms=12)
-    ax3.plot(model.c12[~mask],model.c6[~mask],'.',color='gray',ms=12)
+    ax3.plot(model.c12[mask],model.c6[mask],'.',color='#00b0f0',ms=12)
+    ax3.plot(model.c12[~mask],model.c6[~mask],'.',color='#ffc000',ms=12)
 
     region_c6,region_c12 = region
     p7, = ax3.plot(C12,C6,'x',color='black')
     ax3.plot(10**region_c12,10**region_c6,color='black',linewidth=3)
 
-    p5 = ax3.quiver( model.c12, model.c6,
-        model.capacity*model.P76*model.kC12/model.dlasI,
-        model.capacity*model.P81*model.kC6/model.dluxI, color='red' )
+    try :
+        p5 = ax3.quiver( model.c12, model.c6,
+            model.capacity*model.P76*model.kC12/model.dlasI,
+            model.capacity*model.P81*model.kC6/model.dluxI, color='red' )
+    except :
+        p5 = ax3.quiver( model.c12, model.c6,
+            model.capacity*model.P76*0.0,
+            model.capacity*model.P81*0.0, color='red' )
 
     ax3.set_xlabel(r'morphogen, $C_{12}$ / nM',fontsize=16)
     ax3.set_ylabel(r'morphogen, $C_{6}$ / nM',fontsize=16)
 
-    ax3.text(10**2.6,10**2.2,'bistable region',fontsize=16)
+    ax3.text(10**2.6,10**3.75,'bistable region',fontsize=16)
     ax3.set_xscale('log'); ax3.set_yscale('log')
     ax3.set_xlim(0.04,75000); ax3.set_ylim(0.04,75000) 
     
