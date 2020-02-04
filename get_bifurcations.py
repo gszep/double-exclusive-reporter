@@ -24,11 +24,7 @@ def get_args() :
 	parser.add_argument('--save_path', type=str, default='',help='save bifrucation only')
 	return vars(parser.parse_args())
 
-
-def get_bifurcations(crn_path,predictions,version,data_path):
-	'''Calculate bifurcation diagram for double exclusive reporter
-	for a given range of concentrations of c6 and c12'''
-
+def define_model(version, crn_path=None):
 	print('Generating bifurcation diagram for version %d'%version)
 	if version == 1:
 		parameters = model1.parameters
@@ -39,31 +35,38 @@ def get_bifurcations(crn_path,predictions,version,data_path):
 	else:
 		raise Exception('Unknown model version')
 
-	if predictions:
+	if crn_path is not None:
 		parameters.update(crn_parameters(crn_path))
+	
+	return parameters, system_specifications
 
+def get_bifurcations(parameters, system_specifications, **kwargs):
+	'''Calculate bifurcation diagram for double exclusive reporter
+	for a given range of concentrations of c6 and c12'''
+
+	try : 
 		print('######### search along c6 axis #########')
 		model = Model(pars = parameters , **system_specifications)
-		model.get_cusp('c6','c12')
+		model.get_cusp(['c6','c12'], **kwargs)
+	except : 
+		print('######### search along c12 axis #########')
+		model = Model(pars = parameters , **system_specifications)
+		model.get_cusp(['c12','c6'], **kwargs)
 
-	if data_path != '' :
-		liquid_data = read_csv(data_path)
-		cfp,yfp = liquid_data.pivot('C6','C12','P(ECFP/mRFP1)'), liquid_data.pivot('C6','C12','P(EYFP/mRFP1)')
-		c12,c6 = meshgrid(cfp.columns.values,cfp.index.values)
+	return model
 
-	else :
-		cfp,yfp = None,None
-		c12,c6 = None,None
+def load_data(data_path):
+	liquid_data = read_csv(data_path)
+	cfp,yfp = liquid_data.pivot('C6','C12','P(ECFP/mRFP1)'), liquid_data.pivot('C6','C12','P(EYFP/mRFP1)')
+	c12,c6 = meshgrid(cfp.columns.values,cfp.index.values)
+	return c6,c12,cfp,yfp
 
-	return model,c6,c12,cfp,yfp
-
-
-def generate_figure(model,data_path,c6,c12,cfp,yfp):
+def generate_figure(model, data_path):
 	'''main program figure display'''
 
 	figure(figsize=(7,7))
 	if data_path != '' :
-
+		c6,c12,cfp,yfp = load_data(data_path)
 		c12shift,c6shift = 2*cfp.columns.values, 2*cfp.index.values
 		pcolor(c12+c12shift,c6+c6shift[:,None],log10(cfp.values),cmap='cyan',vmin=1,vmax=2.1)
 		colorbar(pad=-0.1,ticks=[1,2,3]).ax.set_yticklabels(['$10^{1}$','$10^{2}$','$10^{3}$'])
@@ -72,8 +75,13 @@ def generate_figure(model,data_path,c6,c12,cfp,yfp):
 		colorbar(ticks=[]).ax.set_yticklabels([])
 	
 	if model :
-		region = model.bifurcations['LC1']
-		region_c6,region_c12 = region.curve[:-1,region.params].T
+		region_forward = model.bifurcations['LC1for']
+		region_c6, region_c12 = region_forward.curve[:-1,region_forward.params].T
+		region_c6 = region_c6[region_c6!=0]
+		region_c12 = region_c12[region_c12!=0]
+		plot(10**region_c12,10**region_c6,color='black',linewidth=3)
+		region_backward = model.bifurcations['LC1back']
+		region_c6, region_c12 = region_backward.curve[:-1,region_backward.params].T
 		region_c6 = region_c6[region_c6!=0]
 		region_c12 = region_c12[region_c12!=0]
 		plot(10**region_c12,10**region_c6,color='black',linewidth=3)
@@ -126,16 +134,17 @@ def generate_figure(model,data_path,c6,c12,cfp,yfp):
 		plot([None],[None],linewidth=0,fillstyle='left',marker='s',markersize=15,markeredgewidth=0,markerfacecolor='#ffc000',markerfacecoloralt='#00b0f0',label='plate reader')
 	
 	plot([None],[None],color='black',linewidth=3, label='saddle-node bifurcation')
-	legend(fontsize=16,loc=2)
+	legend(fontsize=16, loc=2)
 	show()
 
 
 def main(crn_path,predictions,version,data_path,save_path) :
 	'''parametrisation of main program'''
 
-	model,c6,c12,cfp,yfp = get_bifurcations(crn_path,predictions,version,data_path)
-	if save_path != '' :
-		region = model.bifurcations['LC1']
+	parameters, system_specifications = define_model(version, crn_path)
+	model = get_bifurcations(parameters, system_specifications, predictions)
+	if save_path != '':
+		region = model.bifurcations['LC1for'] # TODO: Also save backwards evaluation
 		region_c6,region_c12 = region.curve[:-1,region.params].T
 		region_c6 = region_c6[region_c6!=0]
 		region_c12 = region_c12[region_c12!=0]

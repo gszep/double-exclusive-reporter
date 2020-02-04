@@ -15,8 +15,8 @@ system_specifications = {
 
 	# promoter activities
 	'fnspecs' : {
-		'boundLasR' : (['lasR'],'lasR**2 * ( (KS6*10**c6)**nS + (KS12*10**c12)**nS )'),
-		'boundLuxR' : (['luxR'],'luxR**2 * ( (KR6*10**c6)**nR + (KR12*10**c12)**nR )'),
+		'boundLasR' : (['lasR'],'lasR**2 * ( (eS6*10**c6)**nS + (10**c12)**nS )'),
+		'boundLuxR' : (['luxR'],'luxR**2 * ( (10**c6)**nR + (eR12*10**c12)**nR )'),
 		'P76' : (['luxR','lasR'],'( eps76 + KGR_76*boundLuxR(luxR) + KGS_76*boundLasR(lasR) ) / ( 1.0 + KGR_76*boundLuxR(luxR) + KGS_76*boundLasR(lasR) )'),
 		'P81' : (['luxR','lasR'],'( eps81 + KGR_81*boundLuxR(luxR) + KGS_81*boundLasR(lasR) ) / ( 1.0 + KGR_81*boundLuxR(luxR) + KGS_81*boundLasR(lasR) )'),
 		'PLac' : (['lacI'],'1.0/(1.0+lacI**nL)'),
@@ -31,48 +31,46 @@ parameters = {
 	'growth' : 1.0,
 
 	# signal affinity and crosstalk
-	'KGR_76' : 8.74464935835812, 
-	'KGS_76' : 0.00040523437497702, 
-	'KGR_81' : 0.0153475500621728,
-	'KGS_81' : 10.9817728137119,
-	'KR6' : 0.00014985256979569, 
-	'KS6' : 4.22023069018813e-06, 
-	'KR12' : 1.02380021889859e-08,
-	'KS12' : 0.0246441407606443,
+	'KGR_76' : 10.0,
+	'KGS_76' : 0.0001,
+	'KGR_81' : 0.01,
+	'KGS_81' : 10.0,
+	'eS6' : 1e-6,
+	'eR12' : 1e-8,
 
 	# hill coefficients
-	'nR' : 0.78145979866281,
-	'nS' : 0.984847709819578,
-	'nL' : 0.643742771597066,
-	'nT' : 2.18076527621396,
+	'nR' : 1.0,
+	'nS' : 1.0,
+	'nL' : 1.0,
+	'nT' : 2.0,
 
 	# activations
-	'aR33' : 9.61357377397729,
-	'aS175' : 2.92159578355242,
-	'aL' : 65.2589987503168,
-	'aT' : 60.6259602781465, 
+	'aR33' : 10.0,
+	'aS175' : 3.0,
+	'aL' : 10.0,
+	'aT' : 10.0,
 
-	'eps76' : 0.0203965308312284,
-	'eps81' : 0.00611932024058379, 
-	'aYFP' : 33182.8359178623, 
-	'aCFP' : 25061.89983953, 
+	'eps76' : 0.01,
+	'eps81' : 0.005,
+	'aYFP' : 1e4,
+	'aCFP' : 1e4,
 
 	# degredations
-	'dR' : 9.98791524173607, 
-	'dS' : 10.0,
-	'dYFP' : 0.146735252880641, 
-	'dCFP' : 0.462404866514184, 
-	'dL' : 0.647723328994184, 
-	'dT' : 2.72162807214286, 
+	'dR' : 50.0,
+	'dS' : 50.0,
+	'dYFP' : 0.1,
+	'dCFP' : 0.4,
+	'dL' : 1.0,
+	'dT' : 1.0,
 
-	# derepressors
-	'iA' : 0.146707944645707, 
-	'iI' : 129.229930836576,
-	'ATC' : 0.0,
-	'IPTG' : 0.0,
+	# derepression
+	'iA' : 0.2,
+	'iI' : 200.0,
 
-	# morphogens
-	'c12': 4.00, 'c6' : 4.00,
+	# inputs
+	#'c12': 4.88, 'c6' : 4.88,
+	'c12': 3.0, 'c6' : 3.0,
+	'ATC' : 0.0, 'IPTG' : 0.0,
 	
 	# relays
 	'kC6': 0.0, 'kC12': 0.0,
