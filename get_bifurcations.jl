@@ -12,7 +12,7 @@ module Parameters
 end
 
 function evaluateCusp(P, F, J, x0; plot=false, c6=5.0, c12=5.0, ds=-0.1)
-	newtonOptions = Cont.NewtonPar(maxIter = 100, tol = 1e-8)
+	newtonOptions = Cont.NewtonPar(maxIter = 200, tol = 1e-12)
 	eq, hist, flag = Cont.newton(x -> F(x, P, c6, c12), x -> J(x, P, c6, c12), x0, newtonOptions)
 		println("- Equilibrium found at ", eq)
 
@@ -36,7 +36,7 @@ function evaluateCusp(P, F, J, x0; plot=false, c6=5.0, c12=5.0, ds=-0.1)
 	return outfoldco
 end
 
-sol = [-1.,-1.,1.,-1.]
+sol = fill(-1.0,4)
 version = 1
 
 if version == 1
@@ -52,8 +52,8 @@ elseif version == 2
 end
 
 # Evaluate one with plotting
-P = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seeds[1])))
-#evaluateCusp(P, Flog, Jlog, sol, plot=true)
+P = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seeds[2])))
+evaluateCusp(P, Flog, Jlog, sol, plot=true)
 
 # Evaluate all in a loop
 plot(0,0); xlabel!("C12"); ylabel!("C6");

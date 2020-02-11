@@ -131,13 +131,13 @@ function Jlog(c, p, c6, c12, eps = 1e-7)
 	J[4, 1] = capacity*aT * ∂R81(c,c6,c12,p)
 	J[4, 2] = capacity*aT * ∂S81(c,c6,c12,p)
 
-	return Diagonal(log(10) .* 10 .^ c ) * J
+	return J * Diagonal(log(10) .* 10 .^ c )
 end
 
 # Test Jacobian
 c6 = 5.
 c12 = 5.
-sol = [-1.,-1.,-1.,-1.]
+sol = [3.,3.,3.,3.]
 J0 = Jlog(sol,P0,c6,c12)
 function F(x)
 	Flog(x, P0, c6, c12)
