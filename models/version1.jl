@@ -1,3 +1,5 @@
+using Parameters: @unpack
+using LinearAlgebra: Diagonal
 P0 = Dict(
 	# growth parameters
 	"capacity" => 1.0,
@@ -40,66 +42,96 @@ P0 = Dict(
 
 	# derepressors
 	"iA" => 0.146707944645707,
-	"iI" => 129.229930836576
+	"iI" => 129.229930836576,
+	"atc" => 0.0,
+	"iptg" => 0.0
 	)
 
-function F(x, p, c6, c12)
-	luxR, lasR, lacI, tetR = x
+bound(x, c6, c12, K6, K12, n)  = x^2 * ( (K6*10^c6)^n + (K12*10^c12)^n ) / (1.0 + K6*10^c6 + K12*10^c12 )^n
+∂bound(x, c6, c12, K6, K12, n) = 2*x * ( (K6*10^c6)^n + (K12*10^c12)^n ) / (1.0 + K6*10^c6 + K12*10^c12 )^n
 
-	boundLasR(lasR) = lasR*lasR * ( (p["KS6"]*c6)^p["nS"] + (p["KS12"]*c12)^p["nS"] ) / (1.0 + p["KS6"]*c6 + p["KS12"]*c12 )^p["nS"]
-	boundLuxR(luxR) = luxR*luxR * ( (p["KR6"]*c6)^p["nR"] + (p["KR12"]*c12)^p["nR"] ) / (1.0 + p["KR6"]*c6 + p["KR12"]*c12 )^p["nR"]
-	P76(luxR,lasR) = ( p["e76"] + p["KGR_76"]*boundLuxR(luxR) + p["KGS_76"]*boundLasR(lasR) ) / ( 1.0 + p["KGR_76"]*boundLuxR(luxR) + p["KGS_76"]*boundLasR(lasR) )
-	P81(luxR,lasR) = ( p["e81"] + p["KGR_81"]*boundLuxR(luxR) + p["KGS_81"]*boundLasR(lasR) ) / ( 1.0 + p["KGR_81"]*boundLuxR(luxR) + p["KGS_81"]*boundLasR(lasR) )
-	PLac(lacI) = 1.0 / (1.0 + lacI^p["nL"])
-	PTet(tetR) = 1.0 / (1.0 + tetR^p["nT"])
+hill(x, n)  = 1.0 / (1.0 + x^n)
+∂hill(x, n) = -n*x^(n-1.0) / (1.0 + x^n)^2
 
-	dluxR = p["capacity"]*p["aR33"]*PTet(tetR) - luxR*(p["growth"]+p["dR"])
-	dlasR = p["capacity"]*p["aS175"]*PLac(lacI) - lasR*(p["growth"]+p["dS"])
-	dlacI = p["capacity"]*p["aL"]*P76(luxR,lasR) - lacI*(p["growth"]+p["dL"])
-	dtetR = p["capacity"]*p["aT"]*P81(luxR,lasR) - tetR*(p["growth"]+p["dT"])
+function P76(c,c6,c12,p)
+	@unpack KR6,KR12,KS6,KS12, nR,nS, e76,KGR_76,KGS_76 = p
+	luxR, lasR, _, _ = 10 .^ c
 
+	activation = KGR_76*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_76*bound(lasR,c6,c12,KS6,KS12,nS)
+	return ( e76 + activation ) / ( 1.0 + activation )
+end
+
+function ∂S76(c,c6,c12,p)
+	@unpack KR6,KR12,KS6,KS12, nR,nS, e76,KGR_76,KGS_76 = p
+	luxR, lasR, _, _ = 10 .^ c
+
+	activation = KGR_76*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_76*bound(lasR,c6,c12,KS6,KS12,nS)
+	return (1-e76)*KGS_76*∂bound(lasR,c6,c12,KS6,KS12,nS) / ( 1.0 + activation )^2
+end
+
+function ∂R76(c,c6,c12,p)
+	@unpack KR6,KR12,KS6,KS12, nR,nS, e76,KGR_76,KGS_76 = p
+	luxR, lasR, _, _ = 10 .^ c
+
+	activation = KGR_76*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_76*bound(lasR,c6,c12,KS6,KS12,nS)
+	return (1-e76)*KGR_76*∂bound(luxR,c6,c12,KR6,KR12,nR) / ( 1.0 + activation )^2
+end
+
+function P81(c,c6,c12,p)
+	@unpack KR6,KR12,KS6,KS12, nR,nS, e81,KGR_81,KGS_81 = p
+	luxR, lasR, _, _ = 10 .^ c
+
+	activation = KGR_81*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_81*bound(lasR,c6,c12,KS6,KS12,nS)
+	return ( e81 + activation ) / ( 1.0 + activation )
+end
+
+function ∂S81(c,c6,c12,p)
+	@unpack KR6,KR12,KS6,KS12, nR,nS, e81,KGR_81,KGS_81 = p
+	luxR, lasR, _, _ = 10 .^ c
+
+	activation = KGR_81*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_81*bound(lasR,c6,c12,KS6,KS12,nS)
+	return (1-e81)*KGS_81*∂bound(lasR,c6,c12,KS6,KS12,nS) / ( 1.0 + activation )^2
+end
+
+function ∂R81(c,c6,c12,p)
+	@unpack KR6,KR12,KS6,KS12, nR,nS, e81,KGR_81,KGS_81 = p
+	luxR, lasR, _, _ = 10 .^ c
+
+	activation = KGR_81*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_81*bound(lasR,c6,c12,KS6,KS12,nS)
+	return (1-e81)*KGR_81*∂bound(luxR,c6,c12,KR6,KR12,nR) / ( 1.0 + activation )^2
+end
+
+function Flog(c, p, c6, c12, eps=1e-7)
+	@unpack growth,capacity, aR33,aS175,aL,aT, nT,nL, dR,dS,dL,dT, iptg,atc, iI,iA = p
+	luxR, lasR, lacI, tetR = 10 .^ c
+
+	dluxR = ( capacity*aR33 * hill(tetR,nT) - (growth+dR) * luxR )
+	dlasR = ( capacity*aS175 * hill(lacI,nL) - (growth+dS) * lasR )
+	dlacI = ( capacity*aL * P76(c,c6,c12,p) - (growth+dL+iptg*iI) * lacI )
+	dtetR = ( capacity*aT * P81(c,c6,c12,p) - (growth+dT+atc*iA) * tetR )
 	return [dluxR, dlasR, dlacI, dtetR]
 end
 
-Bound(x, c6, c12, K6, K12, n) = x*x * ( (K6*10^c6)^n + (K12*10^c12)^n ) / (1.0 + K6*10^c6 + K12*10^c12 )^n
-Prom(luxR,lasR,c6,c12,KR6,KR12,nR,KS6,KS12,nS,eps,KGR,KGS) = ( eps + KGR*Bound(luxR,c6, c12,  KR6, KR12, nR) + KGS*Bound(lasR, c6, c12, KS6, KS12, nS) ) / ( 1.0 + KGR*Bound(luxR, c6, c12, KR6, KR12, nR) + KGS*Bound(lasR, c6, c12, KS6, KS12, nS) )
-IHill(x, n) = 1.0 / (1.0 + x^n)
+function Jlog(c, p, c6, c12, eps = 1e-7)
+	@unpack growth,capacity, aR33,aS175,aL,aT, nT,nL, dR,dS,dL,dT, iptg,atc, iI,iA = p
+	luxR, lasR, lacI, tetR = 10 .^ c
+	J = zeros(4,4)
 
-function Flog(x, p, c6, c12; eps = 1e-7)
-	luxR, lasR, lacI, tetR = x
+	J[1, 1] = -(growth+dR)
+	J[2, 2] = -(growth+dS)
 
-	dluxR = ( p["aR33"]*IHill(10^tetR, p["nT"]) - 10^luxR*(p["growth"]+p["dR"]) ) / (log(10)*10^luxR + eps)
-	dlasR = ( p["aS175"]*IHill(10^lacI, p["nL"]) - 10^lasR*(p["growth"]+p["dS"]) ) / (log(10)*10^lasR + eps)
-	dlacI = ( p["aL"]*Prom(10^luxR,10^lasR,c6,c12,p["KR6"],p["KR12"],p["nR"],p["KS6"],p["KS12"],p["nS"],p["e76"],p["KGR_76"],p["KGS_76"]) - 10^lacI*(p["growth"]+p["dL"]) ) / (log(10)*10^lacI + eps)
-	dtetR = ( p["aT"]*Prom(10^luxR,10^lasR,c6,c12,p["KR6"],p["KR12"],p["nR"],p["KS6"],p["KS12"],p["nS"],p["e81"],p["KGR_81"],p["KGS_81"]) - 10^tetR*(p["growth"]+p["dT"]) ) / (log(10)*10^tetR + eps)
-	return [dluxR, dlasR, dlacI, dtetR]
-end
+	J[3, 3] = -(growth+dL+iptg*iI)
+	J[4, 4] = -(growth+dT+atc*iA)
 
-dBound(x, c6, c12, K6, K12, n) = 2 * x * ( (K6*10^c6)^n + (K12*10^c12)^n ) / (1.0 + K6*10^c6 + K12*10^c12 )^n
-dPromdluxR(luxR,lasR,c6,c12,KR6,KR12,nR,KS6,KS12,nS,e,KGR,KGS) = ((1.0-e)*KGR*dBound(luxR, c6, c12, KR6, KR12, nR)) / (1.0 + KGR*Bound(luxR, c6, c12, KR6, KR12, nR) + KGS*Bound(lasR, c6, c12, KS6, KS12, nS))^2
-dPromdlasR(luxR,lasR,c6,c12,KR6,KR12,nR,KS6,KS12,nS,e,KGR,KGS) = ((1.0-e)*KGS*dBound(lasR, c6, c12, KS6, KS12, nS)) / (1.0 + KGR*Bound(luxR, c6, c12, KR6, KR12, nR) + KGS*Bound(lasR, c6, c12, KS6, KS12, nS))^2
-dIHill(x, n) = -n*x^(n-1.0) / (1.0 + x^n)^2
+	J[1, 4] = aR33  * ∂hill(tetR,nT)
+	J[2, 3] = aS175 * ∂hill(lacI,nL)
 
-function Jlog(x, p, c6, c12; eps = 1e-7)
-	luxR, lasR, lacI, tetR = x
-	n = 4
-	J = zeros(4, 4)
-	dP76dluxR = dPromdluxR(10^luxR, 10^lasR, c6, c12, p["KR6"], p["KR12"], p["nR"], p["KS6"], p["KS12"], p["nS"], p["e76"], p["KGR_76"], p["KGS_76"])
-	dP76dlasR = dPromdlasR(10^luxR, 10^lasR, c6, c12, p["KR6"], p["KR12"], p["nR"], p["KS6"], p["KS12"], p["nS"], p["e76"], p["KGR_76"], p["KGS_76"])
-	dP81dluxR = dPromdluxR(10^luxR, 10^lasR, c6, c12, p["KR6"], p["KR12"], p["nR"], p["KS6"], p["KS12"], p["nS"], p["e81"], p["KGR_81"], p["KGS_81"])
-	dP81dlasR = dPromdlasR(10^luxR, 10^lasR, c6, c12, p["KR6"], p["KR12"], p["nR"], p["KS6"], p["KS12"], p["nS"], p["e81"], p["KGR_81"], p["KGS_81"])
-	J[1, 1] = -((10^luxR*log(10)*((p["dR"] + p["growth"])*eps + p["aR33"]*log(10)*IHill(10^tetR, p["nT"]))) / (eps + 10^luxR*log(10))^2)
-	J[1, 4] = (10^tetR*p["aR33"]*log(10)*dIHill(10^tetR, p["nT"])) / (eps + 10^luxR*log(10))
-	J[2, 2] = -((10^lasR*log(10)*((p["dS"] + p["growth"])*eps + p["aS175"]*log(10)*IHill(10^lacI, p["nL"]))) / (eps + 10^lasR*log(10))^2)
-	J[2, 3] = (10^lacI*p["aS175"]*log(10)*dIHill(10^lacI, p["nL"])) / (eps + 10^lasR*log(10))
-	J[3, 1] = (10^luxR*p["aL"]*log(10)*dP76dluxR) / (eps + 10^lacI*log(10))
-	J[3, 2] = (10^lasR*p["aL"]*log(10)*dP76dlasR) / (eps + 10^lacI*log(10))
-	J[3, 3] = -((10^lacI*log(10)*((p["dL"] + p["growth"])*eps + p["aL"]*log(10)*Prom(10^luxR,10^lasR,c6,c12,p["KR6"],p["KR12"],p["nR"],p["KS6"],p["KS12"],p["nS"],p["e76"],p["KGR_76"],p["KGS_76"]))) / (eps + 10^lacI*log(10))^2)
-	J[4, 1] = (10^luxR*p["aT"]*log(10)*dP81dluxR) / (eps + 10^tetR*log(10))
-	J[4, 2] = (10^lasR*p["aT"]*log(10)*dP81dlasR) / (eps + 10^tetR*log(10))
-	J[4, 4] = -((10^tetR*log(10)*((p["dT"] + p["growth"])*eps + p["aT"]*log(10)*Prom(10^luxR,10^lasR,c6,c12,p["KR6"],p["KR12"],p["nR"],p["KS6"],p["KS12"],p["nS"],p["e81"],p["KGR_81"],p["KGS_81"]))) / (eps + 10^tetR*log(10))^2)
+	J[3, 1] = aL*∂R76(c,c6,c12,p)
+	J[3, 2] = aL*∂S76(c,c6,c12,p)
+	J[4, 1] = aT*∂R81(c,c6,c12,p)
+	J[4, 2] = aT*∂S81(c,c6,c12,p)
 
-	return J
+	return J * Diagonal(log(10) .* 10 .^ c )
 end
 
 # Test Jacobian
