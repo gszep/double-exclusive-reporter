@@ -36,7 +36,7 @@ function evaluateCusp(P, F, J, x0; plot=false, c6=5.0, c12=5.0, ds=-0.1)
 	return outfoldco
 end
 
-sol = [-1.,-1.,1.,-1.]
+sol = 7.0*ones(4)
 version = 1
 
 if version == 1
@@ -52,21 +52,21 @@ elseif version == 2
 end
 
 # Evaluate one with plotting
-P = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results\\v%d\\summary%d.txt", version, seeds[1])))
-evaluateCusp(P, Flog, Jlog, sol, plot=true)
+P = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seeds[1])))
+#evaluateCusp(P, Flog, Jlog, sol, plot=true)
 
 # Evaluate all in a loop
 plot(0,0); xlabel!("C12"); ylabel!("C6");
 	xlims!((0.,5.));
 	ylims!((0.,5.))
 nseeds = length(seeds)
-mkdir("bifurcation_results")
+#mkdir("bifurcation_results")
 cusps = zeros(nseeds, 3)
 for i in range(1, length = nseeds)
 	seed = seeds[i]
 	println("Computing bifurcation for seed ", seed)
 	#i = seeds[2]
-	P1 = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results\\v%d\\summary%d.txt", version, seed)))
+	P1 = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seed)))
 	outfoldco = evaluateCusp(P1, Flog, Jlog, sol, ds=-0.001)
 	#p = Cont.plotBranch!(outfoldco; label=@sprintf("Seed %d", i), legend=:topleft)
 	bifpt = outfoldco.bifpoint[1]
@@ -75,11 +75,11 @@ for i in range(1, length = nseeds)
 	cusps[i,:] = [seed, bifpt.param, bifpt.printsol]
 
 	# Write branch to file
-	npzwrite(@sprintf("bifurcation_results\\branches%d_seed%d.npz", version, seed), transpose(outfoldco.branch[1:2,:]))
+	npzwrite(@sprintf("bifurcation_results/branches%d_seed%d.npz", version, seed), transpose(outfoldco.branch[1:2,:]))
 
 	# Plot
 	plot!(outfoldco.branch[1,:], outfoldco.branch[2,:], label=@sprintf("Seed %d", seed), legend=:topleft)
 	p = scatter!([bifpt.param], [bifpt.printsol], color=:black, label="")
 	display(p)
 end
-	npzwrite(@sprintf("bifurcation_results\\cusps%d.npz", version), cusps)
+	npzwrite(@sprintf("bifurcation_results/cusps%d.npz", version), cusps)

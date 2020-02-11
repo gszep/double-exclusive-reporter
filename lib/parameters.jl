@@ -18,5 +18,5 @@ function parseSummary(fname)
     return p
 end
 
-fname = "inference_results\\v1\\summary0.txt"
+fname = joinpath("inference_results","v1","summary0.txt")
 parseSummary(fname)
