@@ -17,7 +17,7 @@ class Model(object) :
 		print('finding initial fixed points...')
 
 		self.odes = Vode_ODEsystem(self.system)
-		steady_state = find_fixedpoints(self.odes, n=3, eps=1e-8)
+		steady_state = find_fixedpoints(self.odes, n=5, eps=1e-8)
 		nS = len(steady_state)
 		print('- found %d fixed point(s)'%nS)
 		if nS > 0 :
@@ -29,28 +29,28 @@ class Model(object) :
 			raise Exception("cannot find initial fixed points")
 
 
-	def get_cusp(self,*params) :
+	def get_cusp(self, params, maxstepsize=0.1, npoints=100):
 		'''get cusp bifurcation diagrams via parameter continuation'''
-
+		
 		self.initial_fixed_point()
 		self.bifurcations = ContClass(Generator.MapSystem(self.system))
 
 		print('finding limit point...')
 		self.bifurcations.newCurve(args(
-			freepars = [list(params)[0]], name='EQ1', type='EP-C', MaxNumPoints = 100,
-			LocBifPoints='LP', StepSize = 0.1, MaxStepSize=0.1, StopAtPoints = ['B','LP']))
+			freepars = [params[0]], name='EQ1', type='EP-C', MaxNumPoints = npoints,
+			LocBifPoints='LP', StepSize = 0.1, MaxStepSize=maxstepsize, StopAtPoints = ['B','LP']))
 
-		print(' - forwards')
+		print('- forwards')
 		self.bifurcations['EQ1'].forward()
 
 		if not self.bifurcations['EQ1'].getSpecialPoint('LP1') :
 			self.bifurcations.delCurve('EQ1')
 		
 			self.bifurcations.newCurve(args(
-				freepars = [list(params)[0]], name='EQ1', type='EP-C', MaxNumPoints = 100,
-				LocBifPoints='LP', StepSize = 0.1, MaxStepSize=0.1, StopAtPoints = ['B','LP'] ))
+				freepars = [params[0]], name='EQ1', type='EP-C', MaxNumPoints = npoints,
+				LocBifPoints='LP', StepSize = 0.1, MaxStepSize=maxstepsize, StopAtPoints = ['B','LP'] ))
 
-			print(' - backwards')
+			print('- backwards')
 			self.bifurcations['EQ1'].backward()
 			
   
@@ -58,26 +58,26 @@ class Model(object) :
 		
 			print('following limit curve...')
 			self.bifurcations.newCurve(args(
-				freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 100,
-				initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
+				freepars = params, name='LC1back',type='LP-C', MaxNumPoints = npoints,
+				initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=maxstepsize,
 				StopAtPoints = ['B'] ))
 
-			print(' - forwards')
-			self.bifurcations['LC1'].forward()  
+			print('- backwards')
+			self.bifurcations['LC1back'].backward()  
 			
-			if not self.bifurcations['LC1'].getSpecialPoint('CP1') :
-				self.bifurcations.delCurve('LC1')
+			#if not self.bifurcations['LC1'].getSpecialPoint('CP1') :
+				#self.bifurcations.delCurve('LC1')
 				
-				self.bifurcations.newCurve(args(
-					freepars = list(params), name='LC1',type='LP-C', MaxNumPoints = 100,
-					initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=0.1,
-					StopAtPoints = ['B'] ))
-			
-				print(' - backwards')
-				self.bifurcations['LC1'].backward()
+			self.bifurcations.newCurve(args(
+				freepars = params, name='LC1for',type='LP-C', MaxNumPoints = npoints,
+				initpoint='EQ1:LP1', LocBifPoints='CP', StepSize = 0.1, MaxStepSize=maxstepsize,
+				StopAtPoints = ['B'] ))
+		
+			print('- forwards')
+			self.bifurcations['LC1for'].forward()
 				
-				if not self.bifurcations['LC1'].getSpecialPoint('CP1') :
-					raise Exception('no cusp point found')
+			if not (self.bifurcations['LC1for'].getSpecialPoint('CP1')) and not (self.bifurcations['LC1back'].getSpecialPoint('CP1')):
+				raise Exception('no cusp point found')
 
 			print('done')
 
