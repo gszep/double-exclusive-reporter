@@ -123,15 +123,15 @@ function Jlog(c, p, c6, c12, eps = 1e-7)
 	J[3, 3] = -(growth+dL+iptg*iI)
 	J[4, 4] = -(growth+dT+atc*iA)
 
-	J[1, 4] = aR33  * ∂hill(tetR,nT)
-	J[2, 3] = aS175 * ∂hill(lacI,nL)
+	J[1, 4] = capacity*aR33  * ∂hill(tetR,nT)
+	J[2, 3] = capacity*aS175 * ∂hill(lacI,nL)
 
-	J[3, 1] = aL*∂R76(c,c6,c12,p)
-	J[3, 2] = aL*∂S76(c,c6,c12,p)
-	J[4, 1] = aT*∂R81(c,c6,c12,p)
-	J[4, 2] = aT*∂S81(c,c6,c12,p)
+	J[3, 1] = capacity*aL * ∂R76(c,c6,c12,p)
+	J[3, 2] = capacity*aL * ∂S76(c,c6,c12,p)
+	J[4, 1] = capacity*aT * ∂R81(c,c6,c12,p)
+	J[4, 2] = capacity*aT * ∂S81(c,c6,c12,p)
 
-	return J * Diagonal(log(10) .* 10 .^ c )
+	return Diagonal(log(10) .* 10 .^ c ) * J
 end
 
 # Test Jacobian

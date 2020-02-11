@@ -12,12 +12,12 @@ module Parameters
 end
 
 function evaluateCusp(P, F, J, x0; plot=false, c6=5.0, c12=5.0, ds=-0.1)
-	newtonOptions = Cont.NewtonPar(maxIter = 100, tol = 1e-3)
+	newtonOptions = Cont.NewtonPar(maxIter = 100, tol = 1e-8)
 	eq, hist, flag = Cont.newton(x -> F(x, P, c6, c12), x -> J(x, P, c6, c12), x0, newtonOptions)
 		println("- Equilibrium found at ", eq)
 
 	# Search in the C6 direction
-	opts_br6 = Cont.ContinuationPar(dsmin=0.001, dsmax=0.01, ds=ds, pMin=0.0, pMax=6.0, detect_fold=true, maxSteps=5000)
+	opts_br6 = Cont.ContinuationPar(dsmin=0.001, dsmax=0.01, ds=ds, pMin=0.0, pMax=6.0, detect_fold=true, maxSteps=250)
 		opts_br6.newtonOptions = newtonOptions
 	br6, u6 = Cont.continuation(
 		(x, p) -> F(x, P, p, c12),
@@ -28,7 +28,7 @@ function evaluateCusp(P, F, J, x0; plot=false, c6=5.0, c12=5.0, ds=-0.1)
 	# Compute the fold point more precisely
 	indfold = 1
 	optcontfold = ContinuationPar(dsmin = 0.001, dsmax = 0.005, ds=ds, pMax=5.1, pMin=0.0, maxSteps=1500)
-		optcontfold.newtonOptions = Cont.NewtonPar(tol = 1e-3, maxIter = 300)
+		optcontfold.newtonOptions = Cont.NewtonPar(tol = 1e-6, maxIter = 300)
 	outfoldco, hist, flag = Cont.continuationFold(
 		(x, α, β) -> F(x, P, α, β),
 		(x, α, β) -> J(x, P, α, β),
@@ -36,7 +36,7 @@ function evaluateCusp(P, F, J, x0; plot=false, c6=5.0, c12=5.0, ds=-0.1)
 	return outfoldco
 end
 
-sol = -1*ones(4)
+sol = [-1.,-1.,1.,-1.]
 version = 1
 
 if version == 1
@@ -60,7 +60,6 @@ plot(0,0); xlabel!("C12"); ylabel!("C6");
 	xlims!((0.,5.));
 	ylims!((0.,5.))
 nseeds = length(seeds)
-#mkdir("bifurcation_results")
 cusps = zeros(nseeds, 3)
 for i in range(1, length = nseeds)
 	seed = seeds[i]
