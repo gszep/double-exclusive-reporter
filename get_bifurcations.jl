@@ -1,14 +1,14 @@
 using PseudoArcLengthContinuation, LinearAlgebra, Plots, Printf, Colors, NPZ
 const Cont = PseudoArcLengthContinuation
 
+module Parameters
+	include("lib/parameters.jl")
+end
 module Version1
 	include("models/version1.jl")
 end
 module Version2
 	include("models/version2.jl")
-end
-module Parameters
-	include("lib/parameters.jl")
 end
 
 function get_bifurcations(P, F, J;
@@ -69,7 +69,7 @@ if version == 1
 	Flog = Main.Version1.Flog
 	Jlog = Main.Version1.Jlog
 
-	seeds = range(0,19) |> collect
+	seeds = range(0, stop=19) |> collect
 	filter!(e->e∉[16],seeds)
 
 elseif version == 2
@@ -95,7 +95,6 @@ for (i,seed) in enumerate(seeds)
 	P1["iptg"] = 0.0
 	limit_curve = get_bifurcations(P1, Flog, Jlog)
 	if limit_curve != nothing
-
 		plot!(limit_curve.branch[1,:], label="", alpha=0.5,
 			limit_curve.branch[2,:], color=:blue ) |> display
 	end
@@ -103,7 +102,6 @@ for (i,seed) in enumerate(seeds)
 	P1["iptg"] = 0.002
 	limit_curve = get_bifurcations(P1, Flog, Jlog)
 	if limit_curve != nothing
-
 		plot!(limit_curve.branch[1,:], label="", alpha=0.5,
 			limit_curve.branch[2,:], color=:green ) |> display
 	end
