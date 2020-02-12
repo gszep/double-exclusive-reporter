@@ -135,18 +135,28 @@ function Jlog(c, p, c6, c12, eps = 1e-7)
 	return J * Diagonal(log(10) .* 10 .^ c)
 end
 
-# Test Jacobian
-c6 = 5.
-c12 = 5.
-sol = [3.,3.,3.,3.]
-J0 = Jlog(sol,P0,c6,c12)
-function F(x)
-	Flog(x, P0, c6, c12)
+
+function finiteDifferences(F, x::AbstractVector; δ = 1e-9)
+	f = F(x)
+	N = length(x)
+	J = zeros(eltype(f), N, N)
+	x1 = copy(x)
+	for i=1:N
+		x1[i] += δ
+		J[:, i] .= (F(x1) .- F(x)) / δ
+		x1[i] -= δ
+	end
+	return J
 end
-h = 1e-6
-Japprox =
-	hcat([ F(sol+[h,0.,0.,0.]) - F(sol)
-	, F(sol+[0.,h,0.,0.]) - F(sol)
-	, F(sol+[0.,0.,h,0.]) - F(sol)
-	, F(sol+[0.,0.,0.,h]) - F(sol)
-	]) / h
+
+unit_test = fill(false,10000)
+for i=1:10000
+	sol,c6,c12 = randn(4),randn(),randn()
+
+	unit_test[i] = all(isapprox.( Jlog(sol,P0,c6,c12),
+		finiteDifferences( x->Flog(x,P0,c6,c12),sol),
+		atol=1e-5*norm(Jlog(sol,P0,c6,c12))))
+end
+
+using StatsBase: mean
+@assert all(unit_test)

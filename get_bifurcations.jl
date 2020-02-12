@@ -96,7 +96,7 @@ for (i,seed) in enumerate(seeds)
 	limit_curve = get_bifurcations(P1, Flog, Jlog)
 	if limit_curve != nothing
 
-		plot!(limit_curve.branch[1,:], label="",
+		plot!(limit_curve.branch[1,:], label="", alpha=0.5,
 			limit_curve.branch[2,:], color=:blue ) |> display
 	end
 
@@ -104,7 +104,7 @@ for (i,seed) in enumerate(seeds)
 	limit_curve = get_bifurcations(P1, Flog, Jlog)
 	if limit_curve != nothing
 
-		plot!(limit_curve.branch[1,:], label="",
+		plot!(limit_curve.branch[1,:], label="", alpha=0.5,
 			limit_curve.branch[2,:], color=:green ) |> display
 	end
 
