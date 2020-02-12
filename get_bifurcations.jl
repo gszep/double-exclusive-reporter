@@ -11,74 +11,104 @@ module Parameters
 	include("lib/parameters.jl")
 end
 
-function evaluateCusp(P, F, J, x0; plot=false, c6=5.0, c12=5.0, ds=-0.1)
-	newtonOptions = Cont.NewtonPar(maxIter = 200, tol = 1e-12)
-	eq, hist, flag = Cont.newton(x -> F(x, P, c6, c12), x -> J(x, P, c6, c12), x0, newtonOptions)
-		println("- Equilibrium found at ", eq)
+function get_bifurcations(P, F, J;
+		c6=5.0, c12=5.0, niters=1000)
 
-	# Search in the C6 direction
-	opts_br6 = Cont.ContinuationPar(dsmin=0.001, dsmax=0.01, ds=ds, pMin=0.0, pMax=6.0, detect_fold=true, maxSteps=250)
-		opts_br6.newtonOptions = newtonOptions
-	br6, u6 = Cont.continuation(
-		(x, p) -> F(x, P, p, c12),
-		(x, p) -> J(x, P, p, c12),
-		eq, c6, opts_br6, printsolution = x -> x[1], plot=plot)
-		#Cont.plotBranch(br6; xlabel="C6", ylabel="[luxR]", label="")
+	newtonOptions = Cont.NewtonPar(maxIter = 1000, tol = 1e-12)
+	parameters = Cont.ContinuationPar(
+		dsmin=0.001, ds=-0.01, dsmax=0.01,
+		pMin=0.0, pMax=6.0, detect_fold=true,
+		maxSteps=500, newtonOptions = newtonOptions)
 
-	# Compute the fold point more precisely
-	indfold = 1
-	optcontfold = ContinuationPar(dsmin = 0.001, dsmax = 0.005, ds=ds, pMax=5.1, pMin=0.0, maxSteps=1500)
-		optcontfold.newtonOptions = Cont.NewtonPar(tol = 1e-6, maxIter = 300)
-	outfoldco, hist, flag = Cont.continuationFold(
-		(x, α, β) -> F(x, P, α, β),
-		(x, α, β) -> J(x, P, α, β),
-		br6, indfold, c12, optcontfold, plot=plot)
-	return outfoldco
+	fold_parameters = ContinuationPar(
+		dsmin = 0.001, ds=-0.001, dsmax = 0.005,
+		pMax=5.1, pMin=0.0, maxSteps=1000,
+		newtonOptions = Cont.NewtonPar(tol = 1e-5, maxIter = 300) )
+
+	converged,i,x = false,0,fill(NaN,4)
+	println("1. searching for initial equilibrium...")
+	while !converged
+		try
+			x, _, converged = Cont.newton(
+				x -> F(x, P, c6, c12), x -> J(x, P, c6, c12),
+				randn(4), newtonOptions)
+		catch
+			converged = false
+		end
+
+		i += 1
+		if i > niters
+			printstyled("cannot find initial equilibrium", color=:red)
+			return
+		end
+	end
+
+	println("2. equilibrium curve along c6...")
+	equilibrium_curve, _ = Cont.continuation(
+		(x, p) -> F(x, P, p, c12), (x, p) -> J(x, P, p, c12),
+		x, c6, parameters, printsolution=x->x[1], plot=false)
+
+	if length(equilibrium_curve.bifpoint) > 0
+		printstyled("3. limit points ", color=:green)
+
+		limit_curve, _, success = Cont.continuationFold(
+			(x, α, β) -> F(x, P, α, β), (x, α, β) -> J(x, P, α, β),
+			equilibrium_curve, 1, c12, fold_parameters, plot=false)
+
+		println("\n")
+		return limit_curve
+	else
+		println("no limit points\n")
+		return
+	end
 end
 
-sol = fill(-1.0,4)
 version = 1
-
 if version == 1
 	P0 = Main.Version1.P0
 	Flog = Main.Version1.Flog
 	Jlog = Main.Version1.Jlog
-	seeds = [5, 6, 7, 9, 10, 11, 12, 17, 19]
+
+	seeds = range(0,19) |> collect
+	filter!(e->e∉[16],seeds)
+
 elseif version == 2
 	P0 = Main.Version2.P0
 	Flog = Main.Version2.Flog
 	Jlog = Main.Version2.Jlog
-	seeds = [1, 3, 4, 8, 9, 10, 12, 19]
+
+	seeds = range(0,19) |> collect
+	filter!(e->e∉[0,6,11,16],seeds)
 end
 
-# Evaluate one with plotting
-P = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seeds[2])))
-evaluateCusp(P, Flog, Jlog, sol, plot=true)
+plot(xlims=(0,5), ylims=(0,5), label="",
+	xlabel="C12",ylabel="C6", size=(500,500))
 
-# Evaluate all in a loop
-plot(0,0); xlabel!("C12"); ylabel!("C6");
-	xlims!((0.,5.));
-	ylims!((0.,5.))
-nseeds = length(seeds)
-cusps = zeros(nseeds, 3)
-for i in range(1, length = nseeds)
-	seed = seeds[i]
-	println("Computing bifurcation for seed ", seed)
-	#i = seeds[2]
+plot!([NaN],[NaN],color=:blue,legend=:topleft,label="iptg = 0.0")
+plot!([NaN],[NaN],color=:green,legend=:topleft,label="iptg = 0.002")
+
+for (i,seed) in enumerate(seeds)
+	println("computing bifurcation for seed ", seed)
+
 	P1 = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seed)))
-	outfoldco = evaluateCusp(P1, Flog, Jlog, sol, ds=-0.001)
-	#p = Cont.plotBranch!(outfoldco; label=@sprintf("Seed %d", i), legend=:topleft)
-	bifpt = outfoldco.bifpoint[1]
 
-	# Update cusps
-	cusps[i,:] = [seed, bifpt.param, bifpt.printsol]
+	P1["iptg"] = 0.0
+	limit_curve = get_bifurcations(P1, Flog, Jlog)
+	if limit_curve != nothing
+
+		plot!(limit_curve.branch[1,:], label="",
+			limit_curve.branch[2,:], color=:blue ) |> display
+	end
+
+	P1["iptg"] = 0.002
+	limit_curve = get_bifurcations(P1, Flog, Jlog)
+	if limit_curve != nothing
+
+		plot!(limit_curve.branch[1,:], label="",
+			limit_curve.branch[2,:], color=:green ) |> display
+	end
 
 	# Write branch to file
-	npzwrite(@sprintf("bifurcation_results/branches%d_seed%d.npz", version, seed), transpose(outfoldco.branch[1:2,:]))
-
-	# Plot
-	plot!(outfoldco.branch[1,:], outfoldco.branch[2,:], label=@sprintf("Seed %d", seed), legend=:topleft)
-	p = scatter!([bifpt.param], [bifpt.printsol], color=:black, label="")
-	display(p)
+	# npzwrite(@sprintf("bifurcation_results/branches%d_seed%d.npz", version, seed), transpose(outfoldco.branch[1:2,:]))
 end
-	npzwrite(@sprintf("bifurcation_results/cusps%d.npz", version), cusps)
+#npzwrite(@sprintf("bifurcation_results/cusps%d.npz", version), cusps)

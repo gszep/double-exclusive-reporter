@@ -65,7 +65,7 @@ function ∂S76(c,c6,c12,p)
 	@unpack KR6,KR12,KS6,KS12, nR,nS, e76,KGR_76,KGS_76 = p
 	luxR, lasR, _, _ = 10 .^ c
 
-	activation = KGR_76*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_76*bound(lasR,c6,c12,KS6,KS12,nS)
+	activation =   KGS_76* bound(lasR,c6,c12,KS6,KS12,nS) + KGR_76*bound(luxR,c6,c12,KR6,KR12,nR)
 	return (1-e76)*KGS_76*∂bound(lasR,c6,c12,KS6,KS12,nS) / ( 1.0 + activation )^2
 end
 
@@ -73,7 +73,7 @@ function ∂R76(c,c6,c12,p)
 	@unpack KR6,KR12,KS6,KS12, nR,nS, e76,KGR_76,KGS_76 = p
 	luxR, lasR, _, _ = 10 .^ c
 
-	activation = KGR_76*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_76*bound(lasR,c6,c12,KS6,KS12,nS)
+	activation =   KGR_76* bound(luxR,c6,c12,KR6,KR12,nR) + KGS_76*bound(lasR,c6,c12,KS6,KS12,nS)
 	return (1-e76)*KGR_76*∂bound(luxR,c6,c12,KR6,KR12,nR) / ( 1.0 + activation )^2
 end
 
@@ -89,7 +89,7 @@ function ∂S81(c,c6,c12,p)
 	@unpack KR6,KR12,KS6,KS12, nR,nS, e81,KGR_81,KGS_81 = p
 	luxR, lasR, _, _ = 10 .^ c
 
-	activation = KGR_81*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_81*bound(lasR,c6,c12,KS6,KS12,nS)
+	activation =   KGS_81* bound(lasR,c6,c12,KS6,KS12,nS) + KGR_81*bound(luxR,c6,c12,KR6,KR12,nR)
 	return (1-e81)*KGS_81*∂bound(lasR,c6,c12,KS6,KS12,nS) / ( 1.0 + activation )^2
 end
 
@@ -97,11 +97,11 @@ function ∂R81(c,c6,c12,p)
 	@unpack KR6,KR12,KS6,KS12, nR,nS, e81,KGR_81,KGS_81 = p
 	luxR, lasR, _, _ = 10 .^ c
 
-	activation = KGR_81*bound(luxR,c6,c12,KR6,KR12,nR) + KGS_81*bound(lasR,c6,c12,KS6,KS12,nS)
+	activation =   KGR_81* bound(luxR,c6,c12,KR6,KR12,nR) + KGS_81*bound(lasR,c6,c12,KS6,KS12,nS)
 	return (1-e81)*KGR_81*∂bound(luxR,c6,c12,KR6,KR12,nR) / ( 1.0 + activation )^2
 end
 
-function Flog(c, p, c6, c12, eps=1e-7)
+function Flog(c, p, c6, c12)
 	@unpack growth,capacity, aR33,aS175,aL,aT, nT,nL, dR,dS,dL,dT, iptg,atc, iI,iA = p
 	luxR, lasR, lacI, tetR = 10 .^ c
 
@@ -128,10 +128,11 @@ function Jlog(c, p, c6, c12, eps = 1e-7)
 
 	J[3, 1] = capacity*aL * ∂R76(c,c6,c12,p)
 	J[3, 2] = capacity*aL * ∂S76(c,c6,c12,p)
+
 	J[4, 1] = capacity*aT * ∂R81(c,c6,c12,p)
 	J[4, 2] = capacity*aT * ∂S81(c,c6,c12,p)
 
-	return J * Diagonal(log(10) .* 10 .^ c )
+	return J * Diagonal(log(10) .* 10 .^ c)
 end
 
 # Test Jacobian
