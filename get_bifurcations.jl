@@ -1,16 +1,19 @@
-using PseudoArcLengthContinuation, LinearAlgebra, Plots, Printf, Colors, NPZ
+using PseudoArcLengthContinuation, LinearAlgebra, Plots, Printf, Colors
 const Cont = PseudoArcLengthContinuation
 
-module Version1
-	include("models/version1.jl")
-end
-module Version2
-	include("models/version2.jl")
-end
-module Parameters
-	include("lib/parameters.jl")
-end
+using DelimitedFiles,ColorSchemes
+include("lib/parameters.jl")
+pyplot()
 
+# patches to make logscales work... damn it Julia
+import Base: iterate,firstindex,lastindex,getindex
+iterate(x::Surface{Array{Float64,2}}) = iterate(x.surf)
+iterate(x::Surface{Array{Float64,2}}, i::Int64) = iterate(x.surf,i)
+firstindex(x::Surface{Array{Float64,2}}) = firstindex(x.surf)
+lastindex(x::Surface{Array{Float64,2}}) = lastindex(x.surf)
+getindex(x::Surface{Array{Float64,2}}, i::UnitRange{Int64}) = getindex(x.surf,i)
+
+# main bifurcation loop
 function get_bifurcations(P, F, J;
 		c6=5.0, c12=5.0, niters=1000)
 
@@ -63,13 +66,21 @@ function get_bifurcations(P, F, J;
 	end
 end
 
-version = 1
+module Version1
+	include("models/version1.jl")
+end
+
+module Version2
+	include("models/version2.jl")
+end
+
+version = 2
 if version == 1
 	P0 = Main.Version1.P0
 	Flog = Main.Version1.Flog
 	Jlog = Main.Version1.Jlog
 
-	seeds = range(0,19) |> collect
+	seeds = range(0,stop=19) |> collect
 	filter!(e->e∉[16],seeds)
 
 elseif version == 2
@@ -77,38 +88,43 @@ elseif version == 2
 	Flog = Main.Version2.Flog
 	Jlog = Main.Version2.Jlog
 
-	seeds = range(0,19) |> collect
+	seeds = range(0,stop=19) |> collect
 	filter!(e->e∉[0,6,11,16],seeds)
 end
 
-plot(xlims=(0,5), ylims=(0,5), label="",
-	xlabel="C12",ylabel="C6", size=(500,500))
+plot(xlims=(1.6,2.5e4), ylims=(1.6,2.5e4),
+	label="", size=(400,400),
+	xscale=:log, yscale=:log,
+	xlabel="C12 (nM)",ylabel="C6 (nM)")
 
-plot!([NaN],[NaN],color=:blue,legend=:topleft,label="iptg = 0.0")
-plot!([NaN],[NaN],color=:green,legend=:topleft,label="iptg = 0.002")
+flowdata = readdlm("flowplot.dat",'\t')
+flowdata = reshape(flowdata, (12,8,3))
+heatmap!(unique(flowdata[:,:,1]),unique(flowdata[:,:,2]), colorbar=:none,
+	flowdata[:,:,3], c=cgrad(ColorSchemes.Greys_5.colors))
 
+plot!([NaN],[NaN],color=:red,legend=:topleft,label="limit curve estimates")
 for (i,seed) in enumerate(seeds)
 	println("computing bifurcation for seed ", seed)
 
-	P1 = merge(P0, Main.Parameters.parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seed)))
+	P1 = merge(P0,parseSummary(@sprintf("inference_results/v%d/summary%d.txt", version, seed)))
 
 	P1["iptg"] = 0.0
 	limit_curve = get_bifurcations(P1, Flog, Jlog)
 	if limit_curve != nothing
 
-		plot!(limit_curve.branch[1,:], label="", alpha=0.5,
-			limit_curve.branch[2,:], color=:blue ) |> display
+		plot!(10 .^ limit_curve.branch[1,:], label="", alpha=0.5,
+			10 .^ limit_curve.branch[2,:], color=:red )
 	end
-
-	P1["iptg"] = 0.002
-	limit_curve = get_bifurcations(P1, Flog, Jlog)
-	if limit_curve != nothing
-
-		plot!(limit_curve.branch[1,:], label="", alpha=0.5,
-			limit_curve.branch[2,:], color=:green ) |> display
-	end
-
-	# Write branch to file
-	# npzwrite(@sprintf("bifurcation_results/branches%d_seed%d.npz", version, seed), transpose(outfoldco.branch[1:2,:]))
 end
-#npzwrite(@sprintf("bifurcation_results/cusps%d.npz", version), cusps)
+
+png("rapid-eqilibrium")
+
+# P1["iptg"] = 0.002
+# limit_curve = get_bifurcations(P1, Flog, Jlog)
+# if limit_curve != nothing
+#
+# 	plot!(limit_curve.branch[1,:], label="", alpha=0.5,
+# 		limit_curve.branch[2,:], color=:green ) |> display
+# end
+
+#plot!([NaN],[NaN],color=:green,legend=:topleft,label="iptg = 0.002")

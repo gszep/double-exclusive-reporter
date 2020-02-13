@@ -17,6 +17,3 @@ function parseSummary(fname)
     end
     return p
 end
-
-fname = joinpath("inference_results","v1","summary0.txt")
-parseSummary(fname)

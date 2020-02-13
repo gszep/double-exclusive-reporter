@@ -1,5 +1,5 @@
 using Parameters: @unpack
-using LinearAlgebra: Diagonal
+using LinearAlgebra
 P0 = Dict(
 	# growth parameters
 	"capacity" => 1.0,
