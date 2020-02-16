@@ -97,10 +97,11 @@ plot(xlims=(1.6,2.5e4), ylims=(1.6,2.5e4),
 	xscale=:log, yscale=:log,
 	xlabel="C12 (nM)",ylabel="C6 (nM)")
 
-flowdata = readdlm("flowplot.dat",'\t')
-flowdata = reshape(flowdata, (12,8,3))
-heatmap!(unique(flowdata[:,:,1]),unique(flowdata[:,:,2]), colorbar=:none,
-	flowdata[:,:,3], c=cgrad(ColorSchemes.Greys_5.colors))
+	flowdata = readdlm("flowplot.dat",'\t')
+	flowdata = reshape(flowdata, (12,8,3))
+	heatmap!(unique(flowdata[:,:,1]),unique(flowdata[:,:,2]),
+		colorbar=:top,grid=false,
+		flowdata[:,:,3], c=cgrad(ColorSchemes.Greys_5.colors))
 
 plot!([NaN],[NaN],color=:red,legend=:topleft,label="limit curve estimates")
 for (i,seed) in enumerate(seeds)
