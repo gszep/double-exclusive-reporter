@@ -4,7 +4,7 @@ directive parameters [
 
   // growth parameters
   capacity = 1.0;
-  growth = 1.0;
+  r = 0.5;
 
   // signal affinity and crosstalk
   KGR_76 = 0.0342;
@@ -28,8 +28,8 @@ directive parameters [
   aCFP = 2.16E+04;
   aYFP = 1.62E+04;
 
-  e76 = 0.0114;
-  e81 = 0.00267;
+  e76 = 0.000114;
+  e81 = 0.000267;
 
   // degredations
   dR = 24.6;
@@ -46,7 +46,7 @@ directive parameters [
   IPTG = 0.0;
 
   // relays
-  kC12 = 1000.0;
+  kC12 = 300.0;
   Klas = 48080.5179863686;
   dlasI = 0.000024793285232104;
 
@@ -62,10 +62,14 @@ directive rates [
   P81 = ( e81 + KGR_81*[BR] + KGS_81*[BS] ) / ( 1 + KGR_81*[BR] + KGS_81*[BS] );
   PLac = 1 / (1 + [lacI]^nL );
   PTet = 1 / (1 + [tetR]^nT );
+  growth = r*(1-rho)
 ]
 
 | init c6 0
 | init c12 0
+| init rho 0.002
+
+| -> [[rho]*[growth]] rho
 
 | ->[(([capacity] * aR33) * [PTet])] luxR
 | luxR ->{dR}
@@ -95,8 +99,8 @@ directive rates [
 
 | ->[[capacity]*[P81]] luxI
 | luxI ->{dluxI}
-| ->[kC6*[luxI]] c6
+| ->[kC6*[luxI]*[rho]] c6
 
 | ->[[capacity]*[P76]] lasI
 | lasI ->{dlasI}
-| ->[kC12*[lasI]] c12
+| ->[kC12*[lasI]*[rho]] c12

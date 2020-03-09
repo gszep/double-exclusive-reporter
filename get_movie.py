@@ -42,7 +42,7 @@ def save_frame(model,region,j=0) :
     ax1.set_xlabel('space, $x$ / cm',fontsize=16)
     ax1.set_ylabel('concentrations',fontsize=16)
 
-    ax1.set_ylim(3,5); ax2.set_ylim(-1,4); ax1.set_ylim(0,)
+    ax1.set_ylim(3,5); ax2.set_ylim(-1,5); ax1.set_ylim(0,)
     ax1.set_yticks([]); ax2.set_yticks([]); ax1.set_xlim(0,100*amax(model.space))
     xlim(0,)
 
@@ -100,15 +100,15 @@ def main(crn_path,C6,C12,n_timepoints,t_final,initial) :
     width = 0.004#model._xmax / 4.0
 
     # initial condition
-    model.c6[:] =  1e-1
-    model.c12[:] = 1e-1
+    model.c6[:] = 0.0
+    model.c12[:] = 0.0
 
     if initial == 'both' :
         model.c6[model.space<width] = model._xmax * C6 / width
         model.c12[model.space>=(model._xmax-width)] = model._xmax * C12 / width
 
     elif initial == 'c6' :
-        model.c6[abs(model.space-model._xmax/2)<width/2] = 40000
+        model.c6[abs(model.space-model._xmax/2)<width/2] = 4000
 
     elif initial == 'c12' :
         model.c12[model.space>=(model._xmax-width)] = model._xmax * C12 / width
