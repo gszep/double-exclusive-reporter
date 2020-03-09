@@ -112,7 +112,7 @@ function Flog(c, p, c6, c12)
 	return [dluxR, dlasR, dlacI, dtetR]
 end
 
-function Jlog(c, p, c6, c12, eps = 1e-7)
+function Jlog(c, p, c6, c12)
 	@unpack growth,capacity, aR33,aS175,aL,aT, nT,nL, dR,dS,dL,dT, iptg,atc, iI,iA = p
 	luxR, lasR, lacI, tetR = 10 .^ c
 	J = zeros(4,4)
@@ -157,6 +157,4 @@ for i=1:10000
 		finiteDifferences( x->Flog(x,P0,c6,c12),sol),
 		atol=1e-5*norm(Jlog(sol,P0,c6,c12))))
 end
-
-using StatsBase: mean
 @assert all(unit_test)
