@@ -45,7 +45,7 @@ U = Dict(
 	# synthesis rates
 	"aᴿ" => 16.7,
 	"aˢ" => 2.86,
-	"aᴸ" => 3480.0,
+	"aᴸ" => 2480.0,
 	"aᵀ" => 67.4,
 
 	# degredations

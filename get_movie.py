@@ -33,17 +33,18 @@ def save_frame(model,region,j=0) :
     fig.text(0.57,0.15,r'$\overline{C6}$'+' = {:.0f} nM, '.format(C6)+r'$\overline{C12}$'+' = {:.0f} nM'.format(C12), fontsize=16)
     ax2 = twinx(ax1)
 
-    p1 = ax1.fill_between(100*model.space,log10(model.cfp),color='#00b0f0',linewidth=0,alpha=0.5)
-    p2 = ax1.fill_between(100*model.space,log10(model.yfp),color='#ffc000',linewidth=0,alpha=0.5)
+    p1 = ax1.fill_between(100*model.space,model.cfp,color='#00b0f0',linewidth=0,alpha=0.5)
+    p2 = ax1.fill_between(100*model.space,model.yfp,color='#ffc000',linewidth=0,alpha=0.5)
 
-    p3, = ax2.plot(100*model.space,log10(model.c6),color='#000099',linewidth=5)
-    p4, = ax2.plot(100*model.space,log10(model.c12),color='#ff6600',linewidth=5)
+    p3, = ax2.plot(100*model.space,model.c6,color='#000099',linewidth=5)
+    p4, = ax2.plot(100*model.space,model.c12,color='#ff6600',linewidth=5)
 
     ax1.set_xlabel('space, $x$ / cm',fontsize=16)
     ax1.set_ylabel('concentrations',fontsize=16)
 
-    ax1.set_ylim(3,5); ax2.set_ylim(-1,5); ax1.set_ylim(0,)
-    ax1.set_yticks([]); ax2.set_yticks([]); ax1.set_xlim(0,100*amax(model.space))
+    #ax2.set_ylim(-1,5)
+    ax1.set_ylim(0,2e4); ax2.set_ylim(0,5e3); ax1.set_xlim(0,100*amax(model.space))
+    ax1.set_yticks([]); ax2.set_yticks([])
     xlim(0,)
 
     mask = model.cfp > model.yfp
@@ -97,26 +98,22 @@ def create_animation(model):
 def main(crn_path,C6,C12,n_timepoints,t_final,initial) :
     region = load('./bifurcations.npz').T
     model = fromcrn(crn_path)
-    width = 0.004#model._xmax / 4.0
-
-    # initial condition
-    model.c6[:] = 0.0
-    model.c12[:] = 0.0
+    width = model._xmax / 4.0
 
     if initial == 'both' :
-        model.c6[model.space<width] = model._xmax * C6 / width
-        model.c12[model.space>=(model._xmax-width)] = model._xmax * C12 / width
+        model.c12[model.space<width] = model._xmax * C12 / width
+        model.c6[model.space>=(model._xmax-width)] = model._xmax * C6 / width
 
     elif initial == 'c6' :
-        model.c6[abs(model.space-model._xmax/2)<width/2] = 4000
+        model.c6[abs(model.space-model._xmax/2)<width/2] = 8000
 
     elif initial == 'c12' :
-        model.c12[model.space>=(model._xmax-width)] = model._xmax * C12 / width
+        model.c12[abs(model.space-model._xmax/2)<width/2] = 8000
 
     else :
         raise Exception('invalid initial condition. initial = "c6", "c12" or "both"')
 
-    j = 0
+    j = save_frame(model,region,0)
     while model.time < t_final :
 
         record = int(model.time/model._dt) % int(t_final/model._dt/n_timepoints) == 0

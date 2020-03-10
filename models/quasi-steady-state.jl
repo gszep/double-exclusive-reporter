@@ -129,26 +129,3 @@ function Jlog(c, p, c6, c12)
 
 	return J * Diagonal(log(10) .* 10 .^ c)
 end
-
-function finiteDifferences(F, x::AbstractVector; δ = 1e-9)
-	f = F(x)
-	N = length(x)
-	J = zeros(eltype(f), N, N)
-	x1 = copy(x)
-	for i=1:N
-		x1[i] += δ
-		J[:, i] .= (F(x1) .- F(x)) / δ
-		x1[i] -= δ
-	end
-	return J
-end
-
-unit_test = fill(false,10000)
-for i=1:10000
-	u,c6,c12 = randn(4),randn(),randn()
-
-	unit_test[i] = all(isapprox.( Jlog(u,parameters,c6,c12),
-		finiteDifferences( x->Flog(x,parameters,c6,c12),u),
-		atol=1e-5*norm(Jlog(u,parameters,c6,c12))))
-end
-@assert all(unit_test)

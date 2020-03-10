@@ -6,7 +6,6 @@ include("patches/plots.jl")
 
 #using DelimitedFiles,ColorSchemes
 #include("lib/parameters.jl")
-include("models/minimal.jl")
 
 function rates(u,c₆,c₁₂; parameters=θ)
 	states = Dict(
@@ -111,6 +110,7 @@ end
 
 
 
+include("models/minimal.jl")
 	# yfp = reshape(readdlm("primed/dat2yfp.dat",'\t'), (12,8,3))[end:-1:1,end:-1:1,:]
 	# cfp = reshape(readdlm("primed/dat2cfp.dat",'\t'), (12,8,3))[end:-1:1,end:-1:1,:]
 	# heatmap!( unique(yfp[:,:,1]),unique(yfp[:,:,2]), yfp[:,:,3]'-cfp[:,:,3]',
