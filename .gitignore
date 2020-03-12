@@ -2,6 +2,4 @@
 !.gitignore
 *.pyc
 *.tif
-*.gif
 *.png
-bifurcation_results/*
