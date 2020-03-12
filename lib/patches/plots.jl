@@ -1,4 +1,4 @@
-using Plots, LaTeXStrings
+using Plots, Plots.PlotMeasures, LaTeXStrings
 font = Plots.font("Arial", 24)
 pyplot(guidefont=font, xtickfont=font, ytickfont=font, legendfont=font)
 
