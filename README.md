@@ -1,6 +1,9 @@
 # double-exclusive-reporter
 Code to produce figures for publication
 
+## Running the Simulation and Bifurcation Analysis
+todo
+
 ## Modifying the Model and Parameters
 If you would like to change the model you can modify `models/protected-degradation.jl`. Two methods need to be modified: the rate function `rates( states::Dict, parameters::Dict, t::Float64 )` and jacobian in logspace `jacobian( u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=θ)`. You are advised to use the testing utility `test/jacobian.jl` to ensure that the symbolic jacobian matches the finite difference approximation of the rates.
 
