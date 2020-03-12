@@ -1,4 +1,4 @@
-# double-exclusive-reporter
+# Interpretation of morphogen gradients by a synthetic bistable circuit
 Code to produce figures for publication
 
 ## Running the Simulation and Bifurcation Analysis
