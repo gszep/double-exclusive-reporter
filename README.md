@@ -2,7 +2,7 @@
 Code to produce figures for publication
 
 ## Dependencies
-[Download and install Julia 1.3.1](https://julialang.org) then run a julia session by typing `julia` in the terminal or command prompt. Install the dependencies with the following commands
+[Download and install Julia 1.3.1](https://julialang.org) then run a julia session by typing `julia` in the terminal or command prompt. Install the dependencies - including the library `PseudoArcLengthContinuation.jl` written by R.Veltz - with the following commands
 ```julia
 using Pkg
 Pkg.add(["DifferentialEquations","Plots","LaTeXStrings","StatsBase","LinearAlgebra","Parameters"])
