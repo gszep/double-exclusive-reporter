@@ -1,8 +1,10 @@
 # double-exclusive-reporter
 Code to produce figures for publication
 
-## Modifying Parameters
-The inferred model parameters are contained in `models/protected-degradation.jl`. Simply change or import new sets of parameters and re-run the simulation to see the effects
+## Modifying the Model and Parameters
+If you would like to change the model you can modify `models/protected-degradation.jl`. Two methods need to be modified: the rate function `rates( states::Dict, parameters::Dict, t::Float64 )` and jacobian in logspace `jacobian( u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=θ)`. You are advised to use the testing utility `test/jacobian.jl` to ensure that the symbolic jacobian matches the finite difference approximation of the rates.
+
+The inferred parameters are also contained in `models/protected-degradation.jl`. Simply change or import new sets of parameters to global variable `θ` and re-run the simulation to see the effects
 
 ```
 θ = Dict(
@@ -16,7 +18,7 @@ The inferred model parameters are contained in `models/protected-degradation.jl`
 )
 ```
 
-## Dependencies
+## Installation and Dependencies
 [Download and install Julia 1.3.1](https://julialang.org) then run a julia session by typing `julia` in the terminal or command prompt. Install the dependencies - including the library `PseudoArcLengthContinuation.jl` written by R.Veltz - with the following commands
 ```julia
 using Pkg
