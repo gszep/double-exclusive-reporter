@@ -10,7 +10,7 @@ Running `main.jl` will produce an animation, the layout of which is defined in `
 ![](_simulation.gif)
 
 ## Fluorescence Microscopy Data Processing
-All microscopy data processing as described in the supplementary was done suing `get_boundary.py` and the `bulk-processing.ipynb` notebook. The input data are large `TIFF` hyperstacks and are not uploaded here; but can be provided upon request
+All microscopy data processing as described in the supplementary was done using `get_boundary.py` and the `bulk-processing.ipynb` notebook. The input data are large `TIFF` hyperstacks and are not uploaded here; but can be provided upon request
 ![](_kymographs.png)
 
 ## Modifying the Model and Parameters
