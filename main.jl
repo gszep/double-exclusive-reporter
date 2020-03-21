@@ -6,7 +6,7 @@ include("lib/animate.jl")
 include("models/protected-degradation.jl")
 
 ############################# simulation grid
-n_points,x_max,t_final = 101,0.016,100.0
+n_points,x_max,t_final = 101,0.016,24.0
 	space = range(0,x_max,length=n_points)
 	Δx, Δt = step(space), 0.007
 
