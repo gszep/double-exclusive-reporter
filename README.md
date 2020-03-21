@@ -2,6 +2,12 @@
 Code to produce figures for publication
 
 ## Running the Simulation and Bifurcation Analysis
+The parametrised differential equation model used to describe the genetic circuit is defined by the `rates` and `jacobian` functions in `models/protected-degradation.jl`. The parameters are contained in a dictionary `θ` which is then unpacked by symbol name in the two functions. Changing the model requires changing `θ`, `rates` and `jacobian`.
+
+The initial conditions `u0` and other simulation parameters such as `t_final` can be changed in the simulation script `main.jl`. The `DifferentialEquations.jl` library is used to simulate the model. This is followed by bifurcation analysis for `15 frames` of the entire length of the simulation. The bifurcation algorithm parameters are contained in `get_bifurcations` in `lib/bifurcations.jl`
+
+Running `main.jl` will produce an animation, the layout of which is defined in `lib/animate.jl`
+
 ![](output.gif)
 
 ## Flow Cytometry and Fluorescence Microscopy Data Processing
