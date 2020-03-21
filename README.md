@@ -10,7 +10,8 @@ Running `main.jl` will produce an animation, the layout of which is defined in `
 ![](_simulation.gif)
 
 ## Fluorescence Microscopy Data Processing
-![](_kymographs.gif)
+All microscopy data processing as described in the supplementary was done suing `get_boundary.py` and the `bulk-processing.ipynb` notebook. The input data are large `TIFF` hyperstacks and are not uploaded here; but can be provided upon request
+![](_kymographs.png)
 
 ## Modifying the Model and Parameters
 If you would like to change the model you can modify `models/protected-degradation.jl`. Two methods need to be modified: the rate function `rates( states::Dict, parameters::Dict, t::Float64 )` and jacobian in logspace `jacobian( u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=θ)`. You are advised to use the testing utility `test/jacobian.jl` to ensure that the symbolic jacobian matches the finite difference approximation of the rates.
