@@ -2,7 +2,7 @@ from numpy import *
 from matplotlib.pyplot import *
 from skimage import io
 
-from crnpy.colors import cyan,yellow
+from colors import cyan,yellow
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.linear_model import BayesianRidge
 from sklearn.pipeline import Pipeline
@@ -12,7 +12,7 @@ from os import system
 
 from sys import argv
 from argparse import ArgumentParser
-	
+
 # basis function
 def sigmoid(x) :
 	return 1.0/(1.0+exp(-x))
@@ -25,7 +25,7 @@ def features(x,degree=3) :
 
 
 def fit(data,threshold = 25000,t_final=24,x_width=1.0) :
-	
+
 	# create coordinate meshes
 	n_frames,height,width,n_channels = data.shape
 	x,t = linspace(0,x_width,num=width),linspace(0,t_final,num=n_frames)
@@ -33,7 +33,7 @@ def fit(data,threshold = 25000,t_final=24,x_width=1.0) :
 	xx,tt = meshgrid(x,t)
 	X,_ = meshgrid(x,linspace(0,1,num=height))
 	cfp,yfp,rfp = 0,1,2
-	
+
 	# intensity normalisation
 	data /= array([5519.0,4994.0,2296.0])
 
