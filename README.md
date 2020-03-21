@@ -2,7 +2,7 @@
 Code to produce figures for publication
 
 ## Running the Simulation and Bifurcation Analysis
-todo
+![](output.gif)
 
 ## Flow Cytometry and Fluorescence Microscopy Data Processing
 todo
