@@ -1,5 +1,4 @@
 # Interpretation of morphogen gradients by a bistable circuit
-Code to produce figures for publication
 
 ## Running the Simulation and Bifurcation Analysis
 The parametrised differential equation model used to describe the genetic circuit is defined by the `rates` and `jacobian` functions in `models/protected-degradation.jl`. The parameters are contained in a dictionary `θ` which is then unpacked by symbol name in the two functions. Changing the model requires changing `θ`, `rates` and `jacobian`.
