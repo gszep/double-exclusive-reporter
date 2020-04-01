@@ -34,7 +34,7 @@ The inferred parameters are also contained in `models/protected-degradation.jl`.
 [Download and install Julia 1.3.1](https://julialang.org) then run a julia session by typing `julia` in the terminal or command prompt. Install the dependencies - including the library `PseudoArcLengthContinuation.jl` written by R.Veltz - with the following commands
 ```julia
 using Pkg
-Pkg.add(["DifferentialEquations","Plots","PyPlots","LaTeXStrings","StatsBase","LinearAlgebra","Parameters"])
+Pkg.add(["DifferentialEquations","Plots","PyPlot","LaTeXStrings","StatsBase","LinearAlgebra","Parameters"])
 Pkg.add(PackageSpec(path="https://github.com/rveltz/PseudoArcLengthContinuation.jl"))
 ```
 then clone this repo and run the main script
