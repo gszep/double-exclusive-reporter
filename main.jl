@@ -15,10 +15,11 @@ u0 = zeros(n_points,9)
 
 	# cell density
 	θ["ρ"] = 0.002
-	u0[:,1] .= θ["ρ"]
+	#u0[:,1] .= θ["ρ"]
+	u0[space .> x_max/4, 1] .= θ["ρ"]
 
 	# signaling [nM]
-	u0[space.-x_max/2 .> x_max/4, 6] .= 1000 # c6
+	#u0[space.-x_max/2 .> x_max/4, 6] .= 0 # c6
 	u0[space .< x_max/4, 7] .= 1000 # c12
 
 	# derepressors
@@ -33,4 +34,8 @@ problem = ODEProblem( rates, u0, (0.0,t_final), θ )
 bifurcations = get_bifurcations( solution, rates, jacobian )
 
 #################### generate animation simulate
-generate_animation(solution, "output.gif"; bifurcations=bifurcations)
+generate_animation(solution, "output.gif")
+
+solution
+
+plot(solution[end,7] label = "")

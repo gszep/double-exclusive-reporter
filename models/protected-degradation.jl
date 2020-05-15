@@ -53,7 +53,11 @@ using LinearAlgebra
 	"iᴬ" => 0.421,
 	"iᴵ" => 418.0,
 	"A" => 0.0,
-	"I" => 0.0
+	"I" => 0.0,
+
+	#relay
+	"kc6" => 0,#353260.788053105,
+	"kc12" => 186.113764100785
 )
 
 ##############################  receiver binding
@@ -116,7 +120,7 @@ end
 
 ############################# rate functions used for spatial simulations
 function rates( states::Dict, parameters::Dict, t::Float64 )
-	@unpack r,K, D₆,D₁₂, aᴿ,aˢ,aᴸ,aᵀ,aᶜ,aʸ, nᵀ,nᴸ, dᴿ,dˢ,dᴸ,dᵀ,dᶜ,dʸ, I,A, iᴵ,iᴬ = parameters
+	@unpack r,K, D₆,D₁₂, aᴿ,aˢ,aᴸ,aᵀ,aᶜ,aʸ, nᵀ,nᴸ, dᴿ,dˢ,dᴸ,dᵀ,dᶜ,dʸ, I,A, iᴵ,iᴬ, kc6,kc12 = parameters
 	@unpack R, S, L, T, c₆, c₁₂, CFP,YFP,ρ = states
 
 	# growth
@@ -147,6 +151,10 @@ function rates( states::Dict, parameters::Dict, t::Float64 )
 		dc₆[end] = D₆ * (c₆[end-1]-c₆[end]) / Δx^2
 		dc₁₂[end] = D₁₂ * (c₁₂[end-1]-c₁₂[end]) / Δx^2
 	end
+
+	dc₆.+= ρ .* kc6
+	dc₁₂.+= ρ .* kc12
+
 
 	return Dict(
 		"R" => dR, "S" => dS, "L" => dL,
