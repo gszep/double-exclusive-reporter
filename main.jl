@@ -11,16 +11,15 @@ n_points,x_max,t_final = 101,0.016,24.0
 	Δx, Δt = step(space), 0.007
 
 ############################# initial conditions
-u0 = zeros(n_points,9)
+u0 = zeros(n_points,11)
 
 	# cell density
 	θ["ρ"] = 0.002
-	#u0[:,1] .= θ["ρ"]
-	u0[space .> x_max/4, 1] .= θ["ρ"]
+	u0[:,1] .= θ["ρ"] #u0[space .< x_max/4, 1] .= θ["ρ"]
 
 	# signaling [nM]
-	#u0[space.-x_max/2 .> x_max/4, 6] .= 0 # c6
-	u0[space .< x_max/4, 7] .= 1000 # c12
+	#u0[space.-x_max/2 .> x_max/4, 6] .= 1000 # c6
+	u0[space .< x_max/4, 7] .= 1500 # c12
 
 	# derepressors
 	θ["A"] = 0.0 # atc [ng/ml]
@@ -31,11 +30,7 @@ problem = ODEProblem( rates, u0, (0.0,t_final), θ )
 	solution = solve( problem, Euler(), dt=Δt )
 
 ############################# bifurcation analysis
-bifurcations = get_bifurcations( solution, rates, jacobian )
+bifurcations = get_bifurcations( solution, rates, jacobian, frames=15 )
 
 #################### generate animation simulate
-generate_animation(solution, "output.gif")
-
-solution
-
-plot(solution[end,7] label = "")
+generate_animation(solution, "output.gif", bifurcations = bifurcations, fps=5, frames=15)
