@@ -53,7 +53,14 @@ using LinearAlgebra
 	"iᴬ" => 0.421,
 	"iᴵ" => 418.0,
 	"A" => 0.0,
-	"I" => 0.0
+	"I" => 0.0,
+
+	#relay
+	"k₆" => 300.0,
+	"k₁₂" => 0.0, #186.113764100785,
+
+	"dk₆" => 1.07,
+    "dk₁₂" => 1.09
 )
 
 ##############################  receiver binding
@@ -116,8 +123,8 @@ end
 
 ############################# rate functions used for spatial simulations
 function rates( states::Dict, parameters::Dict, t::Float64 )
-	@unpack r,K, D₆,D₁₂, aᴿ,aˢ,aᴸ,aᵀ,aᶜ,aʸ, nᵀ,nᴸ, dᴿ,dˢ,dᴸ,dᵀ,dᶜ,dʸ, I,A, iᴵ,iᴬ = parameters
-	@unpack R, S, L, T, c₆, c₁₂, CFP,YFP,ρ = states
+	@unpack r,K, D₆,D₁₂, aᴿ,aˢ,aᴸ,aᵀ,aᶜ,aʸ, nᵀ,nᴸ, dᴿ,dˢ,dᴸ,dᵀ,dᶜ,dʸ, I,A, iᴵ,iᴬ, k₆,k₁₂, dk₆,dk₁₂ = parameters
+	@unpack R, S, L, T, c₆, c₁₂, CFP,YFP,ρ, luxI,lasI = states
 
 	# growth
 	γ = r .* (1 .- ρ./K )
@@ -126,10 +133,15 @@ function rates( states::Dict, parameters::Dict, t::Float64 )
 	# calculate reaction rates
 	dR = aᴿ .* hill(T,nᵀ) .- (γ.+dᴿ) .* R
 	dS = aˢ .* hill(L,nᴸ) .- (γ.+dˢ) .* S
+
 	dL = aᴸ .* P76(states, parameters) - (γ.+dᴸ.+iᴵ*I) .* L
 	dT = aᵀ .* P81(states, parameters) - (γ.+dᵀ.+iᴬ*A) .* T
+
 	dCFP = aᶜ .* P76(states, parameters) - (γ.+dᶜ) .* CFP
 	dYFP = aʸ .* P81(states, parameters) - (γ.+dʸ) .* YFP
+
+	dluxI = P81(states, parameters) - (γ.+dk₆) .* luxI
+	dlasI = P76(states, parameters) - (γ.+dk₁₂) .* lasI
 
 	# calculate laplacian
 	dc₆, dc₁₂ = zero(c₆), zero(c₁₂)
@@ -146,12 +158,17 @@ function rates( states::Dict, parameters::Dict, t::Float64 )
 
 		dc₆[end] = D₆ * (c₆[end-1]-c₆[end]) / Δx^2
 		dc₁₂[end] = D₁₂ * (c₁₂[end-1]-c₁₂[end]) / Δx^2
+
+		# relay reaction
+		dc₆ .+= ρ .* k₆ .* luxI
+		dc₁₂ .+= ρ .* k₁₂ .* lasI
 	end
 
 	return Dict(
 		"R" => dR, "S" => dS, "L" => dL,
 		"T" => dT, "c₆" => dc₆, "c₁₂" => dc₁₂,
-		"CFP" => dCFP, "YFP" => dYFP, "ρ" => dρ
+		"CFP" => dCFP, "YFP" => dYFP, "ρ" => dρ,
+		"luxI" => dluxI, "lasI" => dlasI
 	)
 end
 
@@ -175,15 +192,20 @@ function rates( states::Array, parameters::Dict, t::Float64 )
 
 		# responses
 		"CFP" => states[:,8],
-		"YFP" => states[:,9]
+		"YFP" => states[:,9],
+
+		# relay
+		"luxI" => states[:,10],
+		"lasI" => states[:,11]
 	)
 
-	@unpack ρ,R,S,L,T,c₆,c₁₂,CFP,YFP = rates(states,parameters,t)
-	return [ρ R S L T c₆ c₁₂ CFP YFP]
+	@unpack ρ,R,S,L,T,c₆,c₁₂,CFP,YFP,luxI,lasI = rates(states,parameters,t)
+	return [ρ R S L T c₆ c₁₂ CFP YFP luxI lasI]
 end
 
 ############ jacobian and rate function in logspace used for bifurcation analysis
-function rates(u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=θ)
+function rates(u::Array, p::NamedTuple{(:c₆,:c₁₂),Tuple{Float64,Float64}} ; parameters::Dict=θ)
+	@unpack c₆,c₁₂ = p
 	states = Dict(
 
 		# cell density
@@ -203,7 +225,11 @@ function rates(u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=θ)
 
 		# responses
 		"CFP" => NaN,
-		"YFP" => NaN
+		"YFP" => NaN,
+
+		# relay
+		"luxI" => NaN,
+		"lasI" => NaN
 	)
 
 	t = NaN
@@ -211,7 +237,8 @@ function rates(u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=θ)
 	return [R,S,L,T]
 end
 
-function jacobian( u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=θ)
+function jacobian( u::Array, p::NamedTuple{(:c₆,:c₁₂),Tuple{Float64,Float64}} ; parameters::Dict=θ)
+	@unpack c₆,c₁₂ = p
 	states = Dict(
 
 		# cell density
@@ -231,8 +258,11 @@ function jacobian( u::Array, c₆::Float64, c₁₂::Float64 ; parameters::Dict=
 
 		# responses
 		"CFP" => NaN,
-		"YFP" => NaN
+		"YFP" => NaN,
 
+		# relay
+		"luxI" => NaN,
+		"lasI" => NaN
 	)
 
 	@unpack r,K, D₆,D₁₂, aᴿ,aˢ,aᴸ,aᵀ, nᵀ,nᴸ, dᴿ,dˢ,dᴸ,dᵀ, I,A, iᴵ,iᴬ = parameters
