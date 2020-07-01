@@ -10,7 +10,7 @@ function generate_animation( solution::ODESolution, file_name::String; bifurcati
 	animation = @animate for i ∈ range(1,length(solution.u),length=frames)
 
 		i = Int(floor(i))
-		_,_,_,_,_,c₆,c₁₂,CFP,YFP = eachcol(solution.u[i])
+		ρ,_,_,_,_,c₆,c₁₂,CFP,YFP,luxI,lasI = eachcol(solution.u[i])
 		t = round(solution.t[i])
 
 ############################# real space plot
@@ -39,8 +39,12 @@ function generate_animation( solution::ODESolution, file_name::String; bifurcati
 
 		mask = YFP .< CFP
 		scatter!([C12],[C6], marker=:x, color=:black, markersize=15, label="Signal Spatial Average")
+
 		scatter!(c₁₂[mask],c₆[mask], color="#00b0f0", markerstrokewidth=0, markersize=8, label="")
+		quiver!(c₁₂[mask],c₆[mask], quiver=(10.0*ρ[mask]*θ["k₁₂"].*lasI[mask],10.0*ρ[mask]*θ["k₆"].*luxI[mask]), color="#00b0f0", linewidth=3 )
+
 		scatter!(c₁₂[.~mask],c₆[.~mask], color="#ffc000", markerstrokewidth=0, markersize=8, label="")
+		quiver!(c₁₂[.~mask],c₆[.~mask], quiver=(10.0*ρ[.~mask]*θ["k₁₂"].*lasI[.~mask],10.0*ρ[.~mask]*θ["k₆"].*luxI[.~mask]), color="#ffc000", linewidth=3 )
 
 ############################# bistable region
 		if bifurcations != nothing

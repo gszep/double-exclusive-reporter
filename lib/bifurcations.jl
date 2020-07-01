@@ -1,38 +1,36 @@
-using PseudoArcLengthContinuation
-const Cont = PseudoArcLengthContinuation
-
+using PseudoArcLengthContinuation,Parameters,Setfield
+const PALC = PseudoArcLengthContinuation
 # algorithm for getting bistability region
 function get_bifurcations(rates::Function, jacobian::Function;
-	u::Vector{Float64}=[-2.45,-1.13, 0.84, 1.37],
-	c₆::Float64=0.0, c₁₂::Float64=5.0 )
+	u::Vector{Float64}=[-2.27, -1.27, 1.15, 1.26],
+	p::NamedTuple{(:c₆,:c₁₂),Tuple{Float64,Float64}}=(c₆=0.0,c₁₂=5.0) )
 
 	# continuation parameters; if the proceedure fails try modifying these
-	codim1_parameters = Cont.ContinuationPar( detect_fold=true,
-		newtonOptions = Cont.NewtonPar(maxIter = 300, tol = 1e-10),
-		dsmin=0.0001, ds=0.001, dsmax=0.001,
-		pMin=-10.0, pMax=10.0, maxSteps=10000)
+	codim1_parameters = ContinuationPar( detectFold=true,
+		newtonOptions = NewtonPar(maxIter = 300, tol = 1e-10),
+		dsmin=0.001, ds=0.01, dsmax=0.01, a=1.0,
+		pMin=-10.0, pMax=10.0, maxSteps=1000)
 
-	codim2_parameters = Cont.ContinuationPar(
-		newtonOptions = Cont.NewtonPar(tol = 1e-4, maxIter = 300),
-		dsmin = 0.001, ds=-0.001, dsmax = 0.005,
-		pMax=10.0, pMin=-10.0, maxSteps=5000)
+	codim2_parameters = ContinuationPar(
+		newtonOptions = NewtonPar(maxIter = 300, tol = 1e-4),
+		dsmin = 0.001, ds=-0.001, dsmax = 0.01, a=1.0,
+		pMax=10.0, pMin=-10.0, maxSteps=2000)
 
 	# search for initial equilibrium, u
-	u, _, converged = Cont.newton(
-		u -> rates(u, c₆,c₁₂), u -> jacobian(u, c₆,c₁₂),
-		u, Cont.NewtonPar(maxIter = 300, tol = 1e-10) )
+	u, _, converged = newton( rates, jacobian, u, p,
+		NewtonPar(maxIter = 300, tol = 1e-10, verbose = false) )
 
 	if converged # continue equilibrium curve along c6 for fixed c12
-		equilibrium_curve, _ = Cont.continuation(
-			(u, p) -> rates(u, p, c₁₂), (u, p) -> jacobian(u, p, c₁₂),
-			u, c₆, codim1_parameters, printsolution=x->x[1], plot=false)
+		equilibrium_curve, _ = continuation( rates, jacobian, u, p, (@lens _.c₆),
+			codim1_parameters; printSolution = (x, p) -> x[3], verbosity=0)
 
-		if length(equilibrium_curve.bifpoint) > 0
+		if length(equilibrium_curve.foldpoint) > 0
 			# continue limit point in (c12,c6) region
 
-			limit_curve, _, success = Cont.continuationFold(
-				(u, α, β) -> rates(u, α, β), (u, α, β) -> jacobian(u, α, β),
-				equilibrium_curve, 1, c₁₂, codim2_parameters, plot=false)
+			limit_curve, _, success = continuation( rates, jacobian,
+				equilibrium_curve, 1, p, (@lens _.c₆), (@lens _.c₁₂),
+				codim2_parameters)
+
 			return u,limit_curve
 
 		else
@@ -45,7 +43,7 @@ end
 
 # get bistability regions for each point in time
 function get_bifurcations( solution::ODESolution, rates::Function, jacobian::Function;
-	u::Vector{Float64}=[-2.45,-1.13, 0.84, 1.37], c₆::Float64=0.0, c₁₂::Float64=5.0,
+	u::Vector{Float64}=[-2.27, -1.27, 1.15, 1.26], p::NamedTuple{(:c₆,:c₁₂),Tuple{Float64,Float64}}=(c₆=0.0,c₁₂=5.0),
 	frames::Int=15 )
 
 	# iterate through timepoints in solution
@@ -58,7 +56,7 @@ function get_bifurcations( solution::ODESolution, rates::Function, jacobian::Fun
 		θ["ρ"] = mean(ρ)
 
 		try # perform continuation
-			u,limit_curve = get_bifurcations(rates, jacobian; u = u, c₆=c₆, c₁₂=c₁₂)
+			u,limit_curve = get_bifurcations(rates, jacobian; u=u, p=p )
 			bistable_region = Shape(10 .^ limit_curve.branch[1,:], 10 .^ limit_curve.branch[2,:])
 			push!(bifurcations,bistable_region)
 
