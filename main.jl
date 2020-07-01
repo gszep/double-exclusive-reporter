@@ -25,12 +25,16 @@ u0 = zeros(n_points,9)
 	θ["A"] = 0.0 # atc [ng/ml]
 	θ["I"] = 0.0 # iptg [mM]
 
+	#relay
+	# θ["k₆"] = 300.0
+	# θ["k₁₂"] = 186.113764100785
+
 ############################# simulate
 problem = ODEProblem( rates, u0, (0.0,t_final), θ )
 	solution = solve( problem, Euler(), dt=Δt )
 
 ############################# bifurcation analysis
-bifurcations = get_bifurcations( solution, rates, jacobian )
+bifurcations = get_bifurcations( solution, rates, jacobian)
 
 #################### generate animation simulate
 generate_animation(solution, "output.gif"; bifurcations=bifurcations)
