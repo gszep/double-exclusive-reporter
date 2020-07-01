@@ -15,15 +15,19 @@ u0 = zeros(n_points,11)
 
 	# cell density
 	θ["ρ"] = 0.002
-	u0[:,1] .= θ["ρ"] #u0[space .< x_max/4, 1] .= θ["ρ"]
+	u0[:,1] .= θ["ρ"]
 
 	# signaling [nM]
-	#u0[space.-x_max/2 .> x_max/4, 6] .= 1000 # c6
-	u0[space .< x_max/4, 7] .= 1500 # c12
+	u0[space.-x_max/2 .> x_max/4, 6] .= 1000 # c6
+	u0[space .< x_max/4, 7] .= 1000 # c12
 
 	# derepressors
 	θ["A"] = 0.0 # atc [ng/ml]
 	θ["I"] = 0.0 # iptg [mM]
+
+	#relay
+	# θ["k₆"] = 300.0
+	# θ["k₁₂"] = 186.113764100785
 
 ############################# simulate
 problem = ODEProblem( rates, u0, (0.0,t_final), θ )
