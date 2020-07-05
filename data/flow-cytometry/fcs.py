@@ -53,8 +53,21 @@ for data_dir in data_dirs :
         if len(channel_differences) > 0 :
             raise ValueError('''{}\nChannel names not in markers. Change marker list or use channel_map'''.format(channel_differences))
 
+        # map channel names
         plate[idx].data = plate[idx].data.reindex(columns=markers)
         plate[idx].meta['_channel_names_'] = tuple(markers)
+        plate[idx].data = plate[idx].data[~plate[idx].data.isna()]
 
-    plate = plate.transform(lambda x : arcsinh(x/150), channels=['Y','C'])
+        # normalise to rfp channel
+        plate[idx].data.Y /= plate[idx].data.R.abs()
+        plate[idx].data.C /= plate[idx].data.R.abs()
+        plate[idx].data = arcsinh(plate[idx].data)
+
+    for idx in plate :
+
+        # centre around autofluorescence signal
+        plate[idx].data.Y -= plate[(0,0)].data.Y.mean()
+        plate[idx].data.C -= plate[(0,0)].data.C.mean()
+        plate[idx].data.R -= plate[(0,0)].data.R.mean()
+
     plates[primed] += [ plate ]
